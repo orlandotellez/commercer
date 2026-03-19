@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { products, getFeaturedProducts } from '@/features/shop/data/products';
-import { categories } from '@/features/shop/data/categories';
-import { ProductCard } from '@/features/shop/components/ProductCard';
+import { products, getFeaturedProducts } from '@/features/product/data/products';
+import { categories } from '@/features/product/data/categories';
+import { ProductCard } from '@/features/product/components/ProductCard';
 import { ArrowRight, Cpu, Shield, Truck, Headphones } from 'lucide-react';
 import styles from './page.module.css';
 

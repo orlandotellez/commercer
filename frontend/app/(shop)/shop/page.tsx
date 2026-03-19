@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { products } from '@/features/shop/data/products';
-import { categories } from '@/features/shop/data/categories';
-import { ProductCard } from '@/features/shop/components/ProductCard';
+import { products } from '@/features/product/data/products';
+import { categories } from '@/features/product/data/categories';
+import { ProductCard } from '@/features/product/components/ProductCard';
 import styles from './page.module.css';
 import { Sidebar } from '@/features/shop/components/Sidebar';
 import { TopBar } from '@/features/shop/components/TopBar';
+import { BreadCrumb } from '@/features/shop/components/BreadCrumb';
 
 export default function ShopPage() {
   const searchParams = useSearchParams();
@@ -78,15 +78,7 @@ export default function ShopPage() {
 
   return (
     <div className={styles.container}>
-
-      {/* Breadcrumb */}
-      <div className={styles.breadcrumb}>
-        <Link href="/">Inicio</Link>
-        <span>/</span>
-        <span className={styles.active}>
-          {activeCategory?.name || 'Todos los Productos'}
-        </span>
-      </div>
+      <BreadCrumb activeCategory={activeCategory} />
 
       <div className={styles.layout}>
         <Sidebar
@@ -101,7 +93,6 @@ export default function ShopPage() {
 
         {/* Main */}
         <div className={styles.main}>
-          {/* Top bar */}
           <TopBar
             products={products}
             categories={categories}

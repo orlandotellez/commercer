@@ -26,12 +26,10 @@
   gap: 24px;
 }
 
-/* Main */
 .main {
   flex: 1;
 }
 
-/* Grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -50,7 +48,6 @@
   }
 }
 
-/* Empty */
 .empty {
   text-align: center;
   padding: 40px;
