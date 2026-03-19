@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { useCart } from '@/features/cart/context/CartContext';
 import { useState } from 'react';
-import { categories } from '@/features/product/data/categories';
+import { categories } from '@/features/shop/data/categories';
 import styles from './StoreNavbar.module.css';
 
 export const StoreNavbar = () => {
