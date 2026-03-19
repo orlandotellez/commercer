@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Rajdhani } from "next/font/google";
 import "./globals.css";
-import { CartProvider } from "@/features/cart/context/CardContext";
+import { CartProvider } from "@/features/cart/context/CartContext";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
