@@ -1,0 +1,86 @@
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  gap: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 16px;
+  background: white;
+}
+
+.image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.info {
+  flex: 1;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  color: black;
+}
+
+.name:hover {
+  color: #2563eb;
+}
+
+.brand {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.qtyBox {
+  display: flex;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.qtyBox button {
+  padding: 6px;
+  cursor: pointer;
+}
+
+.qtyBox span {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.price {
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.deleteBtn {
+  color: #dc2626;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.deleteBtn:hover {
+  opacity: 0.8;
+}

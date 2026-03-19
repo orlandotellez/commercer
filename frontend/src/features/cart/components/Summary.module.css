@@ -1,0 +1,82 @@
+.summary {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 20px;
+  height: fit-content;
+}
+
+.summary h3 {
+  margin-bottom: 16px;
+}
+
+.summaryBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.summaryBox div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.free {
+  color: green;
+  font-weight: 500;
+}
+
+.total {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.checkoutBtn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  background: #2563eb;
+  color: white;
+  text-align: center;
+  padding: 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.checkoutBtn:hover {
+  background: #1d4ed8;
+}
+
+.empty {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty h1 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.empty p {
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.shopBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #2563eb;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.shopBtn:hover {
+  background: #1d4ed8;
+}
