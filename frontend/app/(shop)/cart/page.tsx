@@ -10,7 +10,11 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, tax, total } = useCart();
 
   if (items.length === 0) {
-    return <EmptyCart />
+    return (
+      <div className={styles.centered}>
+        <EmptyCart />
+      </div>
+    );
   }
 
   return (
