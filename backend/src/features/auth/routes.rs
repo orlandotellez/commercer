@@ -1,9 +1,12 @@
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 
-use crate::shared::state::DbState;
+use crate::{features::auth::register::handler, shared::state::DbState};
 
 pub fn routes() -> Router<DbState> {
     Router::new()
         .route("/login", get(|| async { "login" }))
-        .route("/register", get(|| async { "Register" }))
+        .route("/register", post(handler::register_user))
 }
