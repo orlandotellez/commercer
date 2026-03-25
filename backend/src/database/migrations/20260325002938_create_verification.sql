@@ -1,0 +1,8 @@
+CREATE TABLE verification (
+  id UUID DEFAULT uuid_generate_v4(), 
+  identifier TEXT NOT NULL, 
+  value TEXT NOT NULL, 
+  expires_at TIMESTAMPTZ NOT NULL, 
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL, 
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
