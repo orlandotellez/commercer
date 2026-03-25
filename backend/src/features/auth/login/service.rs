@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
 use crate::{
     features::auth::login::{
         request::LoginRequest,
@@ -10,11 +13,9 @@ use crate::{
     },
 };
 
-use serde::{Deserialize, Serialize};
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Claim {
-    pub sub: String, // email del usuario
+    pub sub: Uuid, // email del usuario
     pub exp: usize,
     pub iat: usize,
 }
@@ -26,50 +27,47 @@ impl LoginService {
         db: &DbState,
         payload: LoginRequest,
     ) -> Result<LoginResponse, AppError> {
-        let account = sqlx::query!(
+        let record = sqlx::query!(
             r#"
-            SELECT user_id, password
-            FROM account
-            WHERE account_id = $1
-            AND provider_id = 'credentials'
+            SELECT 
+                u.id,
+                u.name,
+                u.email,
+                u.created_at,
+                a.password
+            FROM account a
+            JOIN users u ON u.id = a.user_id
+            WHERE a.account_id = $1
+            AND a.provider_id = 'credentials'
             "#,
             payload.email
         )
         .fetch_optional(db)
         .await?;
 
-        let account = match account {
-            Some(acc) => acc,
+        let record = match record {
+            Some(r) => r,
             None => return Err(AppError::Unauthorized("Invalid email or password".into())),
         };
 
+        // Verificar password
         let is_valid =
-            verify_password(&payload.password, account.password.as_deref().unwrap_or(""))?;
+            verify_password(&payload.password, record.password.as_deref().unwrap_or(""))?;
 
         if !is_valid {
             return Err(AppError::Unauthorized("Invalid email or password".into()));
         }
 
-        let user = sqlx::query!(
-            r#"
-            SELECT id, name, email, created_at
-            FROM users
-            WHERE id = $1
-            "#,
-            account.user_id
-        )
-        .fetch_one(db)
-        .await?;
-
-        let token: String = encode_jwt(user.email.clone())?;
+        // Generar JWT
+        let token: String = encode_jwt(record.id)?;
 
         let response: LoginResponse = LoginResponse {
             access_token: token,
             user: UserResponse {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                created_at: user.created_at,
+                id: record.id,
+                name: record.name,
+                email: record.email,
+                created_at: record.created_at,
             },
         };
 

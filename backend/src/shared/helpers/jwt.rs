@@ -1,19 +1,20 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation, decode, encode};
+use uuid::Uuid;
 
 use crate::{
     features::auth::login::service::Claim,
     shared::{config::constants::JWT_SECRET, errors::AppError},
 };
 
-pub fn encode_jwt(email: String) -> Result<String, AppError> {
+pub fn encode_jwt(id: Uuid) -> Result<String, AppError> {
     let expiration: i64 = Utc::now()
         .checked_add_signed(Duration::hours(24))
         .expect("Timestamp válido")
         .timestamp();
 
     let claims: Claim = Claim {
-        sub: email,
+        sub: id,
         exp: expiration as usize,
         iat: Utc::now().timestamp() as usize,
     };
