@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO session (\n                id,\n                token,\n                expires_at,\n                created_at,\n                updated_at,\n                user_id\n            )\n            VALUES ($1, $2, $3, $4, $5, $6)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0e4c242c9fdfe95829835aa158246bd645c9a65f3e1a16279a229778c237dec9"
+}

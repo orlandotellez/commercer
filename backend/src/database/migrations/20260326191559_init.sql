@@ -7,6 +7,7 @@ CREATE TABLE users (
   email TEXT NOT NULL UNIQUE, 
   email_verified BOOLEAN NOT NULL, 
   image TEXT, 
+  role TEXT NOT NULL DEFAULT 'customer', 
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL, 
   updated_at timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
