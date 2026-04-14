@@ -9,7 +9,7 @@ use tokio::net::TcpListener;
 
 use crate::database::connection::create_pool;
 
-const PORT: i32 = 3000;
+const PORT: i32 = 3001;
 const HOST: &str = "0.0.0.0";
 
 #[tokio::main]

@@ -242,7 +242,7 @@
 
 /* Table */
 .tableWrapper {
-  background-color: var(--primary-color);
+  background-color: #fff;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   overflow: hidden;
@@ -254,12 +254,12 @@
 }
 
 .tableHead {
-  background-color: #f8fafc;
+  background-color: #1e283a;
 }
 
 .tableHeadCell {
   text-align: left;
-  color: #6B7280;
+  color: #fff;
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.75rem 1rem;
