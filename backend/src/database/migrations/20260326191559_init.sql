@@ -62,11 +62,18 @@ CREATE TABLE category (
 -- product
 CREATE TABLE product (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
-  category_id UUID NOT NULL REFERENCES category(id) ON DELETE CASCADE, 
+  category_id UUID REFERENCES category(id) ON DELETE SET NULL, 
   name TEXT NOT NULL,
+  slug TEXT NOT NULL,
   description TEXT,
+  price REAL NOT NULL,
+  stock INTEGER NOT NULL DEFAULT 0,
+  original_price REAL,
   image_url TEXT,
-  active TEXT NOT NULL,
+  brand TEXT,
+  specs JSONB,
+  active BOOLEAN DEFAULT true,
+  featured BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL, 
   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );

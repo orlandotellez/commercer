@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                id::text as id,\n                name,\n                email,\n                email_verified,\n                COALESCE(role, 'customer') as role,\n                created_at::text as created_at\n            FROM users\n            ORDER BY created_at DESC\n            LIMIT $1 OFFSET $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "79b272582ebad5ad8b8d5ca532a78a2ae2e2e2b36792984d2ecb2f1bef98e6dd"
+}

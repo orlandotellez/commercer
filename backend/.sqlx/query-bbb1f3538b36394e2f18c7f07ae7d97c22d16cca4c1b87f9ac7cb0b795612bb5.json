@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO users (id, name, email, email_verified, role, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7)\n            RETURNING id::text as id, name, email, email_verified, role, created_at::text as created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Bool",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "bbb1f3538b36394e2f18c7f07ae7d97c22d16cca4c1b87f9ac7cb0b795612bb5"
+}

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE account \n                SET password = $1, updated_at = $2\n                WHERE user_id = $3 AND provider_id = 'credentials'\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b5e46dc36103f66628c545abfe50a5388e0d74ae2535b31c303b8db5a277ff56"
+}

@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE users \n            SET name = $1, email = $2, role = $3, updated_at = $4\n            WHERE id = $5\n            RETURNING id::text as id, name, email, email_verified, role, created_at::text as created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "e67b87ecc22563b3ff530221a78b6818a6698da503f95f7721737f2fa8c94ee1"
+}

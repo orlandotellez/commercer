@@ -1,0 +1,101 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                id::text as \"id\", \n                name, \n                slug, \n                description, \n                price as \"price\", \n                COALESCE(original_price, 0.0) as \"original_price: Option<f64>\", \n                image_url as \"image\", \n                category_id::text as \"category_id\", \n                brand, \n                stock as \"stock\", \n                specs, \n                COALESCE(active, false) as \"active\", \n                COALESCE(featured, false) as \"featured\", \n                created_at::text as \"created_at\"\n            FROM product\n            ORDER BY created_at DESC\n            LIMIT $1 OFFSET $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "price",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 5,
+        "name": "original_price: Option<f64>",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "image",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "category_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "brand",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "stock",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "specs",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "featured",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      false,
+      true,
+      false,
+      null,
+      true,
+      null,
+      true,
+      false,
+      true,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "2625e187122ef67d342516a1d47bb750d7844926a64655d652bdcf29fa1e7501"
+}
