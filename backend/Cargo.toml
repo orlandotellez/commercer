@@ -18,7 +18,8 @@ sqlx = { version = "0.8.6", features = [
     "chrono",
     "uuid",
     "migrate",
-    "macros"
+    "macros",
+    "bigdecimal"
 ] }
 
 # Cache Redis
@@ -45,3 +46,4 @@ validator = { version = "0.19", features = ["derive"] }
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+bigdecimal = "0.4.10"
