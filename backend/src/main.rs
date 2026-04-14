@@ -24,7 +24,7 @@ async fn main() {
 
     let listener: TcpListener = TcpListener::bind(&addr).await.unwrap();
 
-    println!("servidor iniciado en http://{}", &addr);
+    println!("servidor iniciado en http://{}/api/v1", &addr);
 
     axum::serve(listener, router).await.unwrap()
 }
