@@ -1,0 +1,373 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Page Header */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageTitle {
+  color: #000000;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.pageSubtitle {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Settings Layout */
+.settingsLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* Settings Navigation */
+.settingsNav {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  background-color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.navItem:hover {
+  background-color: #e5e7eb;
+}
+
+.navItemActive {
+  background-color: #0f1729;
+  color: #fff;
+}
+
+.navItemActive:hover {
+  background-color: #1e293b;
+}
+
+.navIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Settings Content */
+.settingsContent {
+  background-color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.sectionContent {
+  padding: 1.5rem;
+}
+
+.sectionTitle {
+  color: #000000;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.sectionDescription {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Avatar Section */
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.avatar {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  background-color: #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatarText {
+  color: #000000;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.avatarEdit {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: #0f1729;
+  border: 2px solid var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.avatarEdit:hover {
+  background-color: #1e293b;
+}
+
+.avatarEditIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #fff;
+}
+
+.avatarInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.avatarLabel {
+  color: #000000;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.avatarHint {
+  color: #6B7280;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* Form Group */
+.formGroup {
+  margin-bottom: 1.25rem;
+}
+
+.formLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.formLabelIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.formInput,
+.formSelect {
+  width: 100%;
+  background-color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: #000000;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.formInput:focus,
+.formSelect:focus {
+  border-color: #0f1729;
+}
+
+.formInput::placeholder {
+  color: #6B7280;
+}
+
+.formSelect {
+  cursor: pointer;
+}
+
+/* Radio Group */
+.radioGroup {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.radioItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.radioInput {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #0f1729;
+  cursor: pointer;
+}
+
+.radioLabel {
+  color: #000000;
+  font-size: 0.875rem;
+}
+
+/* Toggle Group */
+.toggleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.toggleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 6px;
+}
+
+.toggleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.toggleLabel {
+  color: #000000;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.toggleDescription {
+  color: #6B7280;
+  font-size: 0.75rem;
+}
+
+.toggle {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  background-color: #e5e7eb;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.toggleActive {
+  background-color: #0f1729;
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: #000000;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggleActive .toggleKnob {
+  transform: translateX(1.25rem);
+}
+
+/* Save Button */
+.saveButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #0f1729;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  margin-top: 1rem;
+}
+
+.saveButton:hover {
+  background-color: #1e293b;
+}
+
+.saveIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .settingsLayout {
+    grid-template-columns: 220px 1fr;
+  }
+
+  .settingsNav {
+    flex-direction: column;
+    height: fit-content;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .navItem {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .settingsNav {
+    padding: 0.375rem;
+  }
+
+  .navItem {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .navIcon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}

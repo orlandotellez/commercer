@@ -1,0 +1,16 @@
+.container {
+  display: flex;
+  background-color: var(--primary-color);
+}
+
+.content {
+  width: 100%;
+}
+
+.collapsed {
+  padding: 20px 20px 20px 100px;
+}
+
+.expanded {
+  padding: 20px 20px 20px 280px;
+}

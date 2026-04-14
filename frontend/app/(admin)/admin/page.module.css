@@ -1,0 +1,649 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Page Header */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageTitle {
+  color: var(--font-color-title);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.pageSubtitle {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.lastUpdateLabel {
+  color: #6B7280;
+}
+
+.lastUpdateValue {
+  color: #000;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+}
+
+/* KPIs Row */
+.kpisGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.kpiCard {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.kpiHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.kpiIconWrapper {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpiIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.kpiTrend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.kpiTrendUp {
+  color: #10B981;
+}
+
+.kpiTrendDown {
+  color: #EF4444;
+}
+
+.kpiTrendIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.kpiTitle {
+  color: #6B7280;
+  font-size: 0.875rem;
+}
+
+.kpiValue {
+  color: #000;
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  margin-top: 0.25rem;
+}
+
+/* Chart & Orders Row */
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* Sales Chart */
+.salesChart {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.chartTitle {
+  color: #000;
+  font-weight: 600;
+}
+
+.chartSelect {
+  background-color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: #000;
+  cursor: pointer;
+}
+
+.filterButtons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.filterButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterButton:hover {
+  border-color: #0f1729;
+}
+
+.filterButtonActive {
+  background-color: #0f1729;
+  border-color: #0f1729;
+  color: #fff;
+}
+
+.filterButtonActive:hover {
+  background-color: #1e293b;
+}
+
+.chartBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 12rem;
+  position: relative;
+}
+
+.chartBarWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.chartBar {
+  width: 100%;
+  background-color: #0f1729;
+  border-radius: 2px 2px 0 0;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s;
+  min-height: 4px;
+  align-self: flex-end;
+}
+
+.chartBar:hover {
+  background-color: #0f1729;
+}
+
+.chartBarTooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #e5e7eb;
+  color: #000;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-bottom: 0.5rem;
+}
+
+.chartBar:hover .chartBarTooltip {
+  opacity: 1;
+}
+
+.chartBarLabel {
+  color: #6B7280;
+  font-size: 0.625rem;
+  margin-top: 0.5rem;
+}
+
+.chartSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.chartSummaryItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.chartSummaryLabel {
+  color: #6B7280;
+  font-size: 0.75rem;
+}
+
+.chartSummaryValue {
+  color: #000;
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+}
+
+.chartSummaryValuePositive {
+  color: #10B981;
+}
+
+/* Recent Orders */
+.recentOrders {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ordersHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ordersTitle {
+  color: #000;
+  font-weight: 600;
+}
+
+.ordersViewAll {
+  color: #0f1729;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ordersViewAll:hover {
+  text-decoration: underline;
+}
+
+.ordersViewAllIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.ordersList {
+  display: flex;
+  flex-direction: column;
+}
+
+.orderItem {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: background-color 0.15s;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.orderItem:last-child {
+  border-bottom: none;
+}
+
+.orderItem:hover {
+  background-color: #f8fafc;
+}
+
+.orderHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.orderId {
+  color: #000;
+  font-size: 0.875rem;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-weight: 500;
+}
+
+.orderStatus {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.orderStatusCompleted {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.orderStatusProcessing {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.orderStatusShipped {
+  background-color: rgba(15, 23, 41, 0.1);
+  color: #0f1729;
+  border-color: rgba(15, 23, 41, 0.3);
+}
+
+.orderStatusPending {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.orderDetails {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.orderCustomer {
+  color: #6B7280;
+  font-size: 0.75rem;
+}
+
+.orderTotal {
+  color: #000;
+  font-size: 0.875rem;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+}
+
+/* Bottom Row */
+.bottomRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* Inventory Alerts */
+.inventoryAlerts {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.alertsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.alertsTitleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alertsTitle {
+  color: #000;
+  font-weight: 600;
+}
+
+.alertsIcon {
+  width: 1rem;
+  height: 1rem;
+  color: #F59E0B;
+}
+
+.urgentBadge {
+  color: #EF4444;
+  font-size: 0.75rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.alertsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.alertItem {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.15s;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.alertItem:last-child {
+  border-bottom: none;
+}
+
+.alertItem:hover {
+  background-color: #f8fafc;
+}
+
+.alertProductInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alertProductIcon {
+  width: 1rem;
+  height: 1rem;
+  color: #6B7280;
+}
+
+.alertProductName {
+  color: #000;
+  font-size: 0.875rem;
+}
+
+.alertStockInfo {
+  text-align: right;
+}
+
+.alertStockValue {
+  font-size: 0.75rem;
+}
+
+.alertStockUrgent {
+  color: #EF4444;
+}
+
+.alertStockWarning {
+  color: #F59E0B;
+}
+
+.alertStockBar {
+  width: 5rem;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.alertStockBarFill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.alertStockBarUrgent {
+  background-color: #EF4444;
+}
+
+.alertStockBarWarning {
+  background-color: #F59E0B;
+}
+
+/* Top Products */
+.topProducts {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.productsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.productsTitle {
+  color: #000;
+  font-weight: 600;
+}
+
+.productsViewAll {
+  color: #0f1729;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.productsViewAll:hover {
+  text-decoration: underline;
+}
+
+.productsTableWrapper {
+  overflow-x: auto;
+}
+
+.productsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableHead {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tableHeadCell {
+  text-align: left;
+  color: #6B7280;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+}
+
+.tableHeadCellRight {
+  text-align: right;
+}
+
+.tableRow {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.15s;
+}
+
+.tableRow:hover {
+  background-color: #f8fafc;
+}
+
+.tableCell {
+  padding: 0.75rem 1rem;
+  color: #000;
+  font-size: 0.875rem;
+}
+
+.tableCellRight {
+  text-align: right;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+}
+
+.productRank {
+  color: #6B7280;
+  font-size: 0.75rem;
+  width: 1.25rem;
+}
+
+.productName {
+  color: #000;
+}
+
+.productSales {
+  color: #000;
+}
+
+.productRevenue {
+  color: #10B981;
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .kpisGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .kpisGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .chartsRow {
+    grid-template-columns: 2fr 1fr;
+  }
+
+  .bottomRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .headerRight {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
