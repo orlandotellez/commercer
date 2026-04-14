@@ -92,19 +92,16 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
         router.push('/admin');
       }
     }
-  }, [isLoading, isAuthenticated, user, router, allowedRoles]);
+  }, [isLoading, isAuthenticated, user, router, allowedRoles])
 
   if (isLoading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div style={{ color: '#6B7280' }}>Cargando...</div>
-      </div>
-    );
+    return "Cargando...";
   }
 
   if (!isAuthenticated) {
     return null;
   }
 
-  return <>{children}</>;
+  return children
+
 }
