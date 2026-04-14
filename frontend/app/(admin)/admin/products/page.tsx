@@ -12,62 +12,44 @@ import {
   Trash2,
   Package,
   X,
+  Loader2,
+  Database,
+  Upload,
+  Folder,
 } from "lucide-react";
 import styles from "./page.module.css";
+import {
+  listProducts,
+  createProduct,
+  deleteProduct,
+  generateSlug,
+  listCategories,
+  createCategory,
+  CreateProductPayload,
+  ProductResponse,
+  CategoryResponse,
+  seedCategories,
+} from "@/shared/lib/api";
+import { products as sampleProducts } from "@/features/product/data/products";
 
-// Tipos
+// Tipos locales para el admin
 type ProductStatus = "active" | "inactive";
 
-interface Product {
+interface AdminProduct {
   id: string;
   name: string;
-  sku: string;
+  slug: string;
   category: string;
+  categoryId?: string;
   stock: number;
   price: number;
+  originalPrice?: number;
   status: ProductStatus;
   image?: string;
+  brand?: string;
+  description?: string;
+  featured: boolean;
 }
-
-// Datos mock
-const generateMockProducts = (): Product[] => {
-  const categories = ["Componentes", "Periféricos", "Almacenamiento", "Memoria", "Tarjetas Gráficas", "Procesadores"];
-  const products = [
-    "NVIDIA RTX 5090",
-    "AMD Ryzen 9 9950X",
-    "Corsair Vengeance 32GB",
-    "Samsung 990 Pro 2TB",
-    "ASUS ROG Maximus Z790",
-    " Kingston Fury Beast 64GB",
-    "Western Digital Black SN850X",
-    "Intel Core i9-14900K",
-    "Corsair Dominator Platinum 32GB",
-    "Seagate FireCuda 530 1TB",
-    "MSI MEG Z790 ACE",
-    "G.Skill Trident Z5 64GB",
-    "Crucial T700 1TB",
-    "ASUS TUF Gaming GeForce RTX 5080",
-    "AMD Ryzen 7 9800X3D",
-  ];
-
-  return Array.from({ length: 65 }, (_, i) => {
-    const baseProduct = products[i % products.length];
-    const price = Math.floor(Math.random() * 2000) + 50;
-    const stock = Math.floor(Math.random() * 100);
-    
-    return {
-      id: (i + 1).toString(),
-      name: `${baseProduct}${i >= 15 ? ` Gen${Math.floor(i / 15) + 1}` : ""}`,
-      sku: `SKU-${1000 + i}`,
-      category: categories[i % categories.length],
-      stock,
-      price,
-      status: i % 5 === 0 ? "inactive" : "active",
-    };
-  });
-};
-
-const mockProducts = generateMockProducts();
 
 // Componente de paginación
 interface PaginationProps {
@@ -154,6 +136,19 @@ const statusClassMap: Record<ProductStatus, string> = {
   inactive: styles.productStatusInactive,
 };
 
+// Categorías del shop (mapeadas de los products de prueba)
+const categoryMap: Record<string, string> = {
+  cpu: "procesadores",
+  gpu: "tarjetas-graficas",
+  ram: "memoria",
+  storage: "almacenamiento",
+  motherboard: "placas-base",
+  psu: "fuentes-alimentacion",
+  monitor: "monitores",
+  peripherals: "perifericos",
+  accessories: "accesorios",
+};
+
 const ITEMS_PER_PAGE = 10;
 
 export default function ProductsPage() {
@@ -164,28 +159,219 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+
+  // Datos del formulario
+  const [formData, setFormData] = useState<Partial<CreateProductPayload>>({
+    name: "",
+    slug: "",
+    description: "",
+    price: 0,
+    original_price: undefined,
+    image: "",
+    category_id: undefined,
+    brand: "",
+    stock: 0,
+    active: true,
+    featured: false,
+  });
 
   useEffect(() => {
     setMounted(true);
+    fetchProducts();
+    fetchCategories();
   }, []);
 
-  const categories = useMemo(() => {
-    const unique = [...new Set(mockProducts.map(p => p.category))];
+  const fetchCategories = async () => {
+    try {
+      const data = await listCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  const handleSeedCategories = async () => {
+    try {
+      setSeeding(true);
+      for (const cat of seedCategories) {
+        await createCategory(cat);
+      }
+      await fetchCategories();
+      alert("Categorías creadas");
+    } catch (err) {
+      console.error("Error seeding categories:", err);
+      alert("Error al crear categorías");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await listProducts({ limit: 100 });
+      setProducts(
+        data.map((p) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          category: p.category_id || "sin-categoria",
+          stock: p.stock,
+          price: p.price,
+          originalPrice: p.original_price,
+          status: p.active ? "active" : "inactive",
+          image: p.image,
+          brand: p.brand,
+          description: p.description,
+          featured: p.featured,
+        }))
+      );
+    } catch (err) {
+      setError("Error al cargar productos");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSeedProducts = async () => {
+    if (categories.length === 0) {
+      alert("Primero debés crear las categorías");
+      return;
+    }
+
+    if (!confirm("¿Agregar productos de prueba? Esto puede duplicar productos existentes.")) {
+      return;
+    }
+
+    try {
+      setSeeding(true);
+      let addedCount = 0;
+
+      for (const p of sampleProducts) {
+        const slug = generateSlug(p.name);
+        
+        // Buscar categoría por slug
+        const catSlug = categoryMap[p.category] || "sin-categoria";
+        const category = categories.find(c => c.slug === catSlug);
+
+        const payload: CreateProductPayload = {
+          name: p.name,
+          slug,
+          description: p.description,
+          price: p.price,
+          original_price: p.originalPrice,
+          image: p.image,
+          category_id: category?.id,
+          brand: p.brand,
+          stock: p.stock,
+          specs: p.specs,
+          active: true,
+          featured: p.featured,
+        };
+
+        await createProduct(payload);
+        addedCount++;
+      }
+
+      alert(`Se agregaron ${addedCount} productos de prueba`);
+      await fetchProducts();
+    } catch (err) {
+      console.error("Error seeding products:", err);
+      alert("Error al agregar productos de prueba");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const handleSubmitProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.price) {
+      alert("Nombre y precio son requeridos");
+      return;
+    }
+
+    try {
+      const slug = formData.slug || generateSlug(formData.name);
+      
+      const payload: CreateProductPayload = {
+        name: formData.name,
+        slug,
+        description: formData.description,
+        price: formData.price,
+        original_price: formData.original_price,
+        image: formData.image,
+        category_id: formData.category_id,
+        brand: formData.brand,
+        stock: formData.stock || 0,
+        active: formData.active,
+        featured: formData.featured,
+      };
+
+      await createProduct(payload);
+      setShowModal(false);
+      resetForm();
+      await fetchProducts();
+    } catch (err) {
+      console.error("Error creating product:", err);
+      alert("Error al crear producto");
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm("¿Estás seguro de eliminar este producto?")) {
+      return;
+    }
+
+    try {
+      await deleteProduct(id);
+      await fetchProducts();
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      alert("Error al eliminar producto");
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      slug: "",
+      description: "",
+      price: 0,
+      original_price: undefined,
+      image: "",
+      category_id: undefined,
+      brand: "",
+      stock: 0,
+      active: true,
+      featured: false,
+    });
+  };
+
+  const productCategories = useMemo(() => {
+    const unique = [...new Set(products.map(p => p.category))];
     return unique.sort();
-  }, []);
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
-    return mockProducts.filter((product) => {
+    return products.filter((product) => {
       const matchesSearch = 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+        product.slug.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === "all" || product.status === statusFilter;
       const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
       
       return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [searchTerm, statusFilter, categoryFilter]);
+  }, [products, searchTerm, statusFilter, categoryFilter]);
 
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
@@ -229,6 +415,27 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className={styles.headerRight}>
+          <button 
+            className={styles.categoryButton}
+            onClick={handleSeedCategories}
+            disabled={seeding || categories.length > 0}
+            title={categories.length > 0 ? "Ya hay categorías" : "Crear las 9 categorías"}
+          >
+            <Folder className={styles.addIcon} />
+            Crear Categorías
+          </button>
+          <button 
+            className={styles.seedButton} 
+            onClick={handleSeedProducts}
+            disabled={seeding || categories.length === 0}
+          >
+            {seeding ? (
+              <Loader2 className={styles.addIcon} />
+            ) : (
+              <Database className={styles.addIcon} />
+            )}
+            Agregar Productos de Prueba
+          </button>
           <button className={styles.addButton} onClick={() => setShowModal(true)}>
             <Plus className={styles.addIcon} />
             Nuevo Producto
@@ -294,7 +501,7 @@ export default function ProductsPage() {
               }}
             >
               <option value="all">Todas las categorías</option>
-              {categories.map((cat) => (
+              {productCategories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
@@ -324,7 +531,6 @@ export default function ProductsPage() {
           <thead>
             <tr className={styles.tableHead}>
               <th className={styles.tableHeadCell}>Producto</th>
-              <th className={styles.tableHeadCell}>SKU</th>
               <th className={styles.tableHeadCell}>Categoría</th>
               <th className={`${styles.tableHeadCell} ${styles.tableHeadCellRight}`}>Precio</th>
               <th className={`${styles.tableHeadCell} ${styles.tableHeadCellCenter}`}>Stock</th>
@@ -333,9 +539,22 @@ export default function ProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {paginatedProducts.length === 0 ? (
+            {loading ? (
               <tr>
-                <td colSpan={7} className={styles.emptyState}>
+                <td colSpan={6} className={styles.emptyState}>
+                  <Loader2 className={styles.spinner} />
+                  Cargando productos...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className={styles.emptyState}>
+                  {error}
+                </td>
+              </tr>
+            ) : paginatedProducts.length === 0 ? (
+              <tr>
+                <td colSpan={6} className={styles.emptyState}>
                   No se encontraron productos
                 </td>
               </tr>
@@ -344,22 +563,39 @@ export default function ProductsPage() {
                 <tr key={product.id} className={styles.tableRow}>
                   <td className={styles.tableCell}>
                     <div className={styles.productInfo}>
-                      <div className={styles.productIcon}>
-                        <Package className={styles.productIconSvg} />
+                      {product.image ? (
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className={styles.productImage}
+                        />
+                      ) : (
+                        <div className={styles.productIcon}>
+                          <Package className={styles.productIconSvg} />
+                        </div>
+                      )}
+                      <div>
+                        <span className={styles.productName}>{product.name}</span>
+                        {product.brand && (
+                          <span className={styles.productBrand}>{product.brand}</span>
+                        )}
                       </div>
-                      <span className={styles.productName}>{product.name}</span>
                     </div>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={styles.productSku}>{product.sku}</span>
                   </td>
                   <td className={styles.tableCell}>
                     <span className={styles.productCategory}>{product.category}</span>
                   </td>
                   <td className={`${styles.tableCell} ${styles.tableCellRight}`}>
-                    <span className={styles.productPrice}>
-                      ${product.price.toLocaleString("es-AR")}
-                    </span>
+                    <div className={styles.priceWrapper}>
+                      <span className={styles.productPrice}>
+                        ${product.price.toLocaleString("es-AR")}
+                      </span>
+                      {product.originalPrice && (
+                        <span className={styles.originalPrice}>
+                          ${product.originalPrice.toLocaleString("es-AR")}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className={`${styles.tableCell} ${styles.tableCellCenter}`}>
                     <div className={styles.stockWrapper}>
@@ -389,7 +625,11 @@ export default function ProductsPage() {
                       <button className={styles.actionButton} title="Editar">
                         <Edit className={styles.actionIcon} />
                       </button>
-                      <button className={`${styles.actionButton} ${styles.actionButtonDanger}`} title="Eliminar">
+                      <button 
+                        className={`${styles.actionButton} ${styles.actionButtonDanger}`} 
+                        title="Eliminar"
+                        onClick={() => handleDeleteProduct(product.id)}
+                      >
                         <Trash2 className={styles.actionIcon} />
                       </button>
                     </div>
@@ -410,7 +650,7 @@ export default function ProductsPage() {
         />
       )}
 
-      {/* Simple Modal Placeholder */}
+      {/* Create Product Modal */}
       {showModal && (
         <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -420,9 +660,148 @@ export default function ProductsPage() {
                 <X className={styles.modalCloseIcon} />
               </button>
             </div>
-            <div className={styles.modalBody}>
-              <p className={styles.modalText}>Modal de creación de producto (placeholder)</p>
-            </div>
+            <form onSubmit={handleSubmitProduct} className={styles.modalBody}>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Nombre *</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Slug</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    placeholder="Se genera automáticamente"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Precio *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className={styles.formInput}
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Precio Original</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className={styles.formInput}
+                    value={formData.original_price || ""}
+                    onChange={(e) => setFormData({ ...formData, original_price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Stock</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.formInput}
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Marca</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={formData.brand}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Categoría</label>
+                  <select
+                    className={styles.formSelect}
+                    value={formData.category_id || ""}
+                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value || undefined })}
+                  >
+                    <option value="">Seleccionar categoría</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>URL de Imagen</label>
+                  <input
+                    type="url"
+                    className={styles.formInput}
+                    value={formData.image || ""}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Descripción</label>
+                <textarea
+                  className={styles.formTextarea}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className={styles.formCheckboxes}>
+                <label className={styles.formCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={formData.active ?? true}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                  />
+                  <span>Activo</span>
+                </label>
+
+                <label className={styles.formCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={formData.featured ?? false}
+                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  />
+                  <span>Destacado</span>
+                </label>
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton}
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.submitButton}>
+                  <Upload className={styles.addIcon} />
+                  Crear Producto
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
