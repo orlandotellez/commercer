@@ -1,0 +1,219 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+export interface CreateProductPayload {
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  original_price?: number;
+  image?: string;
+  category_id?: string;
+  brand?: string;
+  stock: number;
+  specs?: Record<string, string>;
+  active?: boolean;
+  featured?: boolean;
+}
+
+export interface ProductResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  original_price?: number;
+  image?: string;
+  category_id?: string;
+  brand?: string;
+  stock: number;
+  specs?: Record<string, string>;
+  active: boolean;
+  featured: boolean;
+  created_at?: string;
+}
+
+export interface ListProductsParams {
+  search?: string;
+  category_id?: string;
+  featured?: boolean;
+  active?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+// Categories
+export interface CategoryResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export interface CreateCategoryPayload {
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export async function listCategories(): Promise<CategoryResponse[]> {
+  const res = await fetch(`${API_URL}/categories`, {
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch categories');
+  }
+
+  return res.json();
+}
+
+export async function createCategory(payload: CreateCategoryPayload): Promise<CategoryResponse> {
+  const res = await fetch(`${API_URL}/categories`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to create category');
+  }
+
+  return res.json();
+}
+
+export async function deleteCategory(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_URL}/categories/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to delete category');
+  }
+
+  return res.json();
+}
+
+// Seed data
+export const seedCategories = [
+  { name: "Procesadores", slug: "procesadores", description: "CPUs de Intel y AMD" },
+  { name: "Tarjetas Gráficas", slug: "tarjetas-graficas", description: "GPUs de NVIDIA y AMD" },
+  { name: "Memoria RAM", slug: "memoria", description: "Módulos de memoria DDR4 y DDR5" },
+  { name: "Almacenamiento", slug: "almacenamiento", description: " SSDs y HDDs" },
+  { name: "Placas Madre", slug: "placas-base", description: "Motherboards para Intel y AMD" },
+  { name: "Fuentes de Poder", slug: "fuentes-alimentacion", description: "Fuentes modulares y semi-modulares" },
+  { name: "Monitores", slug: "monitores", description: "Monitores gaming y profesionales" },
+  { name: "Periféricos", slug: "perifericos", description: "Mouse, teclados, audífonos" },
+  { name: "Accesorios PC", slug: "accesorios", description: "Coolers, gabinetes y más" },
+];
+
+// Map para convertir category_id del backend (slug) al id del frontend
+export const categoryIdToSlug: Record<string, string> = {
+  "procesadores": "cpu",
+  "tarjetas-graficas": "gpu",
+  "memoria": "ram",
+  "almacenamiento": "storage",
+  "placas-base": "motherboard",
+  "fuentes-alimentacion": "psu",
+  "monitores": "monitor",
+  "perifericos": "peripherals",
+  "accesorios": "accessories",
+};
+
+export const categorySlugToId: Record<string, string> = {
+  "cpu": "procesadores",
+  "gpu": "tarjetas-graficas",
+  "ram": "memoria",
+  "storage": "almacenamiento",
+  "motherboard": "placas-base",
+  "psu": "fuentes-alimentacion",
+  "monitor": "monitores",
+  "peripherals": "perifericos",
+  "accessories": "accesorios",
+};
+
+export async function listProducts(params: ListProductsParams = {}): Promise<ProductResponse[]> {
+  const searchParams = new URLSearchParams();
+  
+  if (params.search) searchParams.set('search', params.search);
+  if (params.category_id) searchParams.set('category_id', params.category_id);
+  if (params.featured !== undefined) searchParams.set('featured', String(params.featured));
+  if (params.active !== undefined) searchParams.set('active', String(params.active));
+  if (params.page) searchParams.set('page', String(params.page));
+  if (params.limit) searchParams.set('limit', String(params.limit));
+
+  const query = searchParams.toString();
+  const url = `${API_URL}/products${query ? `?${query}` : ''}`;
+
+  const res = await fetch(url, {
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch products');
+  }
+
+  return res.json();
+}
+
+export async function createProduct(payload: CreateProductPayload): Promise<ProductResponse> {
+  const res = await fetch(`${API_URL}/products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to create product');
+  }
+
+  return res.json();
+}
+
+export async function updateProduct(id: string, payload: Partial<CreateProductPayload>): Promise<ProductResponse> {
+  const res = await fetch(`${API_URL}/products/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to update product');
+  }
+
+  return res.json();
+}
+
+export async function deleteProduct(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_URL}/products/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to delete product');
+  }
+
+  return res.json();
+}
+
+// Helper para generar slug
+export function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
