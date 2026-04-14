@@ -14,49 +14,43 @@ import {
   X,
   Mail,
   Shield,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import styles from "./page.module.css";
 
 // Tipos
 type UserRole = "admin" | "staff" | "customer";
-type UserStatus = "active" | "inactive";
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
-  status: UserStatus;
-  createdAt: string;
-  orders: number;
+  role: string;
+  email_verified: boolean;
+  created_at: string;
 }
 
-// Datos mock
-const generateMockUsers = (): User[] => {
-  const roles: UserRole[] = ["admin", "staff", "customer"];
-  const firstNames = ["Juan", "María", "Carlos", "Ana", "Pedro", "Laura", "Miguel", "Sofia", "Diego", "Carmen", "Javier", "Isabel", "Fernando", "Patricia", "Roberto", "Claudia", "Alejandro", "Natalia", "Ricardo", "Veronica"];
-  const lastNames = ["Pérez", "García", "López", "Martínez", "Sánchez", "Rodríguez", "Torres", "Ramírez", "Flores", "Ruiz", "Hernández", "González", "Mendoza", "Castillo", "Jiménez", "Vargas", "Romero", "Herrera", "Medina", "Cruz"];
-  
-  return Array.from({ length: 78 }, (_, i) => {
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const name = `${firstName} ${lastName}`;
-    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`;
-    const createdDate = new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
-    
-    return {
-      id: (i + 1).toString(),
-      name,
-      email,
-      role: i < 3 ? "admin" : (i < 10 ? "staff" : "customer"),
-      status: i % 7 === 0 ? "inactive" : "active",
-      createdAt: createdDate.toISOString().split("T")[0],
-      orders: Math.floor(Math.random() * 30),
-    };
-  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+// API
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+
+const getToken = (): string | null => {
+  return localStorage.getItem("access_token");
 };
 
-const mockUsers = generateMockUsers();
+const ITEMS_PER_PAGE = 10;
+
+const roleLabels: Record<string, string> = {
+  admin: "Administrador",
+  staff: "Personal",
+  customer: "Cliente",
+};
+
+const roleClassMap: Record<string, string> = {
+  admin: styles.userRoleAdmin,
+  staff: styles.userRoleStaff,
+  customer: styles.userRoleCustomer,
+};
 
 // Componente de paginación
 interface PaginationProps {
@@ -69,7 +63,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
@@ -89,7 +83,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -103,7 +97,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         <ChevronLeft className={styles.paginationIcon} />
         Anterior
       </button>
-      
+
       <div className={styles.paginationNumbers}>
         {getPageNumbers().map((page, index) => (
           <span key={index}>
@@ -120,7 +114,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
           </span>
         ))}
       </div>
-      
+
       <button
         className={styles.paginationButton}
         onClick={() => onPageChange(currentPage + 1)}
@@ -133,61 +127,264 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   );
 };
 
-const roleLabels: Record<UserRole, string> = {
-  admin: "Administrador",
-  staff: "Personal",
-  customer: "Cliente",
-};
+// Modal de crear usuario
+interface CreateUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
 
-const roleClassMap: Record<UserRole, string> = {
-  admin: styles.userRoleAdmin,
-  staff: styles.userRoleStaff,
-  customer: styles.userRoleCustomer,
-};
+const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("customer");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-const statusLabels: Record<UserStatus, string> = {
-  active: "Activo",
-  inactive: "Inactivo",
-};
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-const statusClassMap: Record<UserStatus, string> = {
-  active: styles.userStatusActive,
-  inactive: styles.userStatusInactive,
-};
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setError("No hay sesión iniciada");
+        return;
+      }
 
-const ITEMS_PER_PAGE = 10;
+      const res = await fetch(`${API_URL}/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, email, password, role }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Error al crear usuario");
+      }
+
+      onSuccess();
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("customer");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Nuevo Usuario</h2>
+          <button className={styles.modalClose} onClick={onClose}>
+            <X className={styles.modalCloseIcon} />
+          </button>
+        </div>
+
+        <form className={styles.modalBody} onSubmit={handleSubmit}>
+          {error && (
+            <div className={styles.modalError}>
+              <AlertCircle className={styles.errorIcon} />
+              {error}
+            </div>
+          )}
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Nombre completo</label>
+            <input
+              type="text"
+              className={styles.formInput}
+              placeholder="Juan Pérez"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Email</label>
+            <input
+              type="email"
+              className={styles.formInput}
+              placeholder="juan@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Contraseña</label>
+            <input
+              type="password"
+              className={styles.formInput}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              required
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Rol</label>
+            <select
+              className={styles.formSelect}
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="customer">Cliente</option>
+              <option value="staff">Personal</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          <div className={styles.modalActions}>
+            <button
+              type="button"
+              className={styles.modalCancel}
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.modalSubmit}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className={styles.spinner} />
+                  Creando...
+                </>
+              ) : (
+                "Crear Usuario"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default function UsersPage() {
   const [mounted, setMounted] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // El layout ya verifica la sesión - solo necesitamos cargar datos
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const fetchUsers = async (page: number = 1) => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setError("No hay sesión iniciada");
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("limit", ITEMS_PER_PAGE.toString());
+      if (searchTerm) params.append("search", searchTerm);
+      if (roleFilter !== "all") params.append("role", roleFilter);
+
+      console.log("Fetching users from:", `${API_URL}/users?${params.toString()}`);
+
+      const res = await fetch(`${API_URL}/users?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("Response status:", res.status);
+      console.log("Response headers:", res.headers);
+
+      const text = await res.text();
+      console.log("Response text:", text);
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${text}`);
+      }
+
+      const data = JSON.parse(text);
+      setUsers(data);
+      setTotalCount(data.length);
+    } catch (err: any) {
+      console.error("Fetch error:", err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
+
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_URL}/users/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Error al eliminar usuario");
+      }
+
+      fetchUsers(currentPage);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const filteredUsers = useMemo(() => {
-    return mockUsers.filter((user) => {
-      const matchesSearch = 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesRole = roleFilter === "all" || user.role === roleFilter;
-      const matchesStatus = statusFilter === "all" || user.status === statusFilter;
-      
-      return matchesSearch && matchesRole && matchesStatus;
-    });
-  }, [searchTerm, roleFilter, statusFilter]);
+  useEffect(() => {
+    if (mounted) {
+      fetchUsers(currentPage);
+    }
+  }, [mounted, currentPage, roleFilter]);
 
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-  const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredUsers, currentPage]);
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm) return users;
+    return users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE) || 1;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -196,17 +393,18 @@ export default function UsersPage() {
   const clearFilters = () => {
     setSearchTerm("");
     setRoleFilter("all");
-    setStatusFilter("all");
     setCurrentPage(1);
   };
 
-  const activeFiltersCount = [
-    roleFilter !== "all",
-    statusFilter !== "all",
-  ].filter(Boolean).length;
+  const activeFiltersCount = [roleFilter !== "all"].filter(Boolean).length;
 
   const getInitials = (name: string) => {
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   if (!mounted) return null;
@@ -244,7 +442,7 @@ export default function UsersPage() {
             }}
           />
         </div>
-        
+
         <button
           className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ""}`}
           onClick={() => setShowFilters(!showFilters)}
@@ -266,7 +464,7 @@ export default function UsersPage() {
               className={styles.filterSelect}
               value={roleFilter}
               onChange={(e) => {
-                setRoleFilter(e.target.value as UserRole | "all");
+                setRoleFilter(e.target.value);
                 setCurrentPage(1);
               }}
             >
@@ -276,23 +474,7 @@ export default function UsersPage() {
               <option value="customer">Cliente</option>
             </select>
           </div>
-          
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Estado</label>
-            <select
-              className={styles.filterSelect}
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as UserStatus | "all");
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Todos los estados</option>
-              <option value="active">Activo</option>
-              <option value="inactive">Inactivo</option>
-            </select>
-          </div>
-          
+
           <button className={styles.clearFilters} onClick={clearFilters}>
             Limpiar filtros
           </button>
@@ -302,7 +484,7 @@ export default function UsersPage() {
       {/* Results Info */}
       <div className={styles.resultsInfo}>
         <span className={styles.resultsCount}>
-          {filteredUsers.length} usuarios encontrados
+          {totalCount} usuarios encontrados
         </span>
         {activeFiltersCount > 0 && (
           <span className={styles.resultsPage}>
@@ -311,83 +493,108 @@ export default function UsersPage() {
         )}
       </div>
 
-      {/* Users Table */}
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr className={styles.tableHead}>
-              <th className={styles.tableHeadCell}>Usuario</th>
-              <th className={styles.tableHeadCell}>Rol</th>
-              <th className={styles.tableHeadCell}>Estado</th>
-              <th className={`${styles.tableHeadCell} ${styles.tableHeadCellRight}`}>Pedidos</th>
-              <th className={styles.tableHeadCell}>Fecha de registro</th>
-              <th className={styles.tableHeadCell}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedUsers.length === 0 ? (
-              <tr>
-                <td colSpan={6} className={styles.emptyState}>
-                  No se encontraron usuarios
-                </td>
+      {/* Error State */}
+      {error && (
+        <div className={styles.errorBanner}>
+          <AlertCircle className={styles.errorBannerIcon} />
+          {error}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading ? (
+        <div className={styles.loadingState}>
+          <Loader2 className={styles.loadingSpinner} />
+          <span>Cargando usuarios...</span>
+        </div>
+      ) : (
+        /* Users Table */
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr className={styles.tableHead}>
+                <th className={styles.tableHeadCell}>Usuario</th>
+                <th className={styles.tableHeadCell}>Rol</th>
+                <th className={styles.tableHeadCell}>Verificado</th>
+                <th className={styles.tableHeadCell}>Fecha de registro</th>
+                <th className={styles.tableHeadCell}>Acciones</th>
               </tr>
-            ) : (
-              paginatedUsers.map((user) => (
-                <tr key={user.id} className={styles.tableRow}>
-                  <td className={styles.tableCell}>
-                    <div className={styles.userInfo}>
-                      <div className={styles.userAvatar}>
-                        <span className={styles.userAvatarText}>{getInitials(user.name)}</span>
-                      </div>
-                      <div className={styles.userDetails}>
-                        <span className={styles.userName}>{user.name}</span>
-                        <span className={styles.userEmail}>{user.email}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={`${styles.userRole} ${roleClassMap[user.role]}`}>
-                      {user.role === "admin" && <Shield className={styles.roleIcon} />}
-                      {user.role === "staff" && <Mail className={styles.roleIcon} />}
-                      {user.role === "customer" && <User className={styles.roleIcon} />}
-                      {roleLabels[user.role]}
-                    </span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={`${styles.userStatus} ${statusClassMap[user.status]}`}>
-                      {statusLabels[user.status]}
-                    </span>
-                  </td>
-                  <td className={`${styles.tableCell} ${styles.tableCellRight}`}>
-                    <span className={styles.userOrders}>{user.orders}</span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={styles.userDate}>
-                      {new Date(user.createdAt).toLocaleDateString("es-AR")}
-                    </span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <div className={styles.actions}>
-                      <button className={styles.actionButton} title="Ver detalles">
-                        <Eye className={styles.actionIcon} />
-                      </button>
-                      <button className={styles.actionButton} title="Editar">
-                        <Edit className={styles.actionIcon} />
-                      </button>
-                      <button className={`${styles.actionButton} ${styles.actionButtonDanger}`} title="Eliminar">
-                        <Trash2 className={styles.actionIcon} />
-                      </button>
-                    </div>
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className={styles.emptyState}>
+                    No se encontraron usuarios
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className={styles.tableRow}>
+                    <td className={styles.tableCell}>
+                      <div className={styles.userInfo}>
+                        <div className={styles.userAvatar}>
+                          <span className={styles.userAvatarText}>
+                            {getInitials(user.name)}
+                          </span>
+                        </div>
+                        <div className={styles.userDetails}>
+                          <span className={styles.userName}>{user.name}</span>
+                          <span className={styles.userEmail}>{user.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span
+                        className={`${styles.userRole} ${roleClassMap[user.role] || styles.userRoleCustomer}`}
+                      >
+                        {user.role === "admin" && <Shield className={styles.roleIcon} />}
+                        {user.role === "staff" && <Mail className={styles.roleIcon} />}
+                        {user.role === "customer" && <User className={styles.roleIcon} />}
+                        {roleLabels[user.role] || user.role}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span
+                        className={`${styles.userStatus} ${user.email_verified
+                          ? styles.userStatusActive
+                          : styles.userStatusInactive
+                          }`}
+                      >
+                        {user.email_verified ? "Verificado" : "Pendiente"}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span className={styles.userDate}>
+                        {new Date(user.created_at).toLocaleDateString("es-AR")}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <div className={styles.actions}>
+                        <button className={styles.actionButton} title="Ver detalles">
+                          <Eye className={styles.actionIcon} />
+                        </button>
+                        <button className={styles.actionButton} title="Editar">
+                          <Edit className={styles.actionIcon} />
+                        </button>
+                        <button
+                          className={`${styles.actionButton} ${styles.actionButtonDanger}`}
+                          title="Eliminar"
+                          onClick={() => handleDelete(user.id)}
+                        >
+                          <Trash2 className={styles.actionIcon} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 1 && !isLoading && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -395,22 +602,15 @@ export default function UsersPage() {
         />
       )}
 
-      {/* Simple Modal Placeholder */}
-      {showModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Nuevo Usuario</h2>
-              <button className={styles.modalClose} onClick={() => setShowModal(false)}>
-                <X className={styles.modalCloseIcon} />
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <p className={styles.modalText}>Modal de creación de usuario (placeholder)</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Create User Modal */}
+      <CreateUserModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={() => {
+          fetchUsers(currentPage);
+          setShowModal(false);
+        }}
+      />
     </div>
   );
 }

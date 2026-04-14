@@ -1,29 +1,68 @@
 'use client';
 
-import { useState } from 'react';
-import { Cpu } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Cpu, Loader2 } from 'lucide-react';
 import styles from './page.module.css';
 import { useRouter } from 'next/navigation';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+interface LoginResponse {
+  access_token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter()
+  const router = useRouter();
+
+  // Verificar si ya hay sesión
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      router.push('/admin');
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      // Login logic here
-      router.push("/admin")
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    }, 1000);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Error al iniciar sesión');
+      }
+
+      const data: LoginResponse = await res.json();
+
+      // Guardar tokens
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      router.push('/admin');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -77,7 +116,14 @@ export default function LoginPage() {
             className={styles.submitButton}
             disabled={isLoading}
           >
-            {isLoading ? 'Ingresando...' : 'Iniciar sesión'}
+            {isLoading ? (
+              <>
+                <Loader2 className={styles.spinner} />
+                Ingresando...
+              </>
+            ) : (
+              'Iniciar sesión'
+            )}
           </button>
         </form>
 
