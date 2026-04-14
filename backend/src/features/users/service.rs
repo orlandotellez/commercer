@@ -1,0 +1,274 @@
+use chrono::Utc;
+use uuid::Uuid;
+
+use crate::{
+    features::users::{
+        request::CreateUserRequest, request::UpdateUserRequest, response::UserResponse,
+    },
+    shared::{
+        errors::AppError, helpers::password::hash_password, models::user_model::User,
+        state::DbState,
+    },
+};
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct ListUsersParams {
+    pub search: Option<String>,
+    pub role: Option<String>,
+    pub page: Option<usize>,
+    pub limit: Option<usize>,
+}
+
+impl Default for ListUsersParams {
+    fn default() -> Self {
+        Self {
+            search: None,
+            role: None,
+            page: Some(1),
+            limit: Some(10),
+        }
+    }
+}
+
+pub struct UsersService;
+
+impl UsersService {
+    pub async fn list_users(
+        db: &DbState,
+        params: ListUsersParams,
+    ) -> Result<Vec<UserResponse>, AppError> {
+        let page = params.page.unwrap_or(1);
+        let limit = params.limit.unwrap_or(10);
+        let offset = (page - 1) * limit;
+
+        let mut query = String::from(
+            r#"
+            SELECT id, name, email, email_verified, role, created_at
+            FROM users
+            WHERE 1=1
+            "#,
+        );
+
+        if params.search.is_some() {
+            query.push_str(" AND (name ILIKE $1 OR email ILIKE $1)");
+        }
+        if params.role.is_some() {
+            query.push_str(" AND role = $2");
+        }
+        query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
+
+        let users: Vec<User> = if let Some(search) = params.search {
+            let search_pattern = format!("%{}%", search);
+            if params.role.is_some() {
+                sqlx::query_as(&query)
+                    .bind(&search_pattern)
+                    .bind(params.role.as_ref().unwrap())
+                    .fetch_all(db)
+                    .await?
+            } else {
+                sqlx::query_as(&query)
+                    .bind(&search_pattern)
+                    .fetch_all(db)
+                    .await?
+            }
+        } else {
+            sqlx::query_as(&query).fetch_all(db).await?
+        };
+
+        Ok(users
+            .into_iter()
+            .map(|u| UserResponse {
+                id: u.id.to_string(),
+                name: u.name,
+                email: u.email,
+                role: u.role,
+                email_verified: u.email_verified,
+                created_at: u.created_at.to_rfc3339(),
+            })
+            .collect())
+    }
+
+    pub async fn get_user(db: &DbState, id: Uuid) -> Result<UserResponse, AppError> {
+        let user = sqlx::query_as!(
+            User,
+            r#"
+            SELECT id, name, email, email_verified, role, image, created_at, updated_at
+            FROM users
+            WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_optional(db)
+        .await?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+        Ok(UserResponse {
+            id: user.id.to_string(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            email_verified: user.email_verified,
+            created_at: user.created_at.to_rfc3339(),
+        })
+    }
+
+    pub async fn create_user(
+        db: &DbState,
+        payload: CreateUserRequest,
+    ) -> Result<UserResponse, AppError> {
+        let hashed_password = hash_password(&payload.password)?;
+        let role = payload.role.unwrap_or_else(|| "customer".to_string());
+
+        // Validar rol
+        if !["admin", "staff", "customer"].contains(&role.as_str()) {
+            return Err(AppError::BadRequest("Invalid role".into()));
+        }
+
+        let mut tx = db.begin().await?;
+
+        // Crear usuario
+        let user: User = sqlx::query_as!(
+            User,
+            r#"
+            INSERT INTO users (id, name, email, email_verified, role, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, email, image, email_verified, role, created_at, updated_at
+            "#,
+            Uuid::new_v4(),
+            payload.name,
+            payload.email,
+            false,
+            role,
+            Utc::now(),
+            Utc::now()
+        )
+        .fetch_one(&mut *tx)
+        .await?;
+
+        // Crear account con password
+        sqlx::query!(
+            r#"
+            INSERT INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+            Uuid::new_v4(),
+            user.email,
+            "credentials",
+            user.id,
+            hashed_password,
+            Utc::now(),
+            Utc::now()
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(UserResponse {
+            id: user.id.to_string(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            email_verified: user.email_verified,
+            created_at: user.created_at.to_rfc3339(),
+        })
+    }
+
+    pub async fn update_user(
+        db: &DbState,
+        id: Uuid,
+        payload: UpdateUserRequest,
+    ) -> Result<UserResponse, AppError> {
+        // Buscar usuario existente
+        let existing = sqlx::query_as!(
+            User,
+            r#"
+            SELECT id, name, email, email_verified, role, image, created_at, updated_at
+            FROM users
+            WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_optional(db)
+        .await?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+        let new_name = payload.name.unwrap_or(existing.name);
+        let new_email = payload.email.unwrap_or(existing.email);
+        let new_role = payload.role.unwrap_or(existing.role);
+
+        // Validar rol
+        if !["admin", "staff", "customer"].contains(&new_role.as_str()) {
+            return Err(AppError::BadRequest("Invalid role".into()));
+        }
+
+        let user: User = sqlx::query_as!(
+            User,
+            r#"
+            UPDATE users 
+            SET name = $1, email = $2, role = $3, updated_at = $4
+            WHERE id = $5
+            RETURNING id, name, email, email_verified, role, image, created_at, updated_at
+            "#,
+            new_name,
+            new_email,
+            new_role,
+            Utc::now(),
+            id
+        )
+        .fetch_one(db)
+        .await?;
+
+        // Actualizar password si se proporciona
+        if let Some(password) = payload.password {
+            let hashed = hash_password(&password)?;
+            sqlx::query!(
+                r#"
+                UPDATE account 
+                SET password = $1, updated_at = $2
+                WHERE user_id = $3 AND provider_id = 'credentials'
+                "#,
+                hashed,
+                Utc::now(),
+                id
+            )
+            .execute(db)
+            .await?;
+        }
+
+        Ok(UserResponse {
+            id: user.id.to_string(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            email_verified: user.email_verified,
+            created_at: user.created_at.to_rfc3339(),
+        })
+    }
+
+    pub async fn delete_user(db: &DbState, id: Uuid) -> Result<(), AppError> {
+        // Verificar que existe
+        let _exists = sqlx::query!(
+            r#"
+            SELECT id FROM users WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_optional(db)
+        .await?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+        // Eliminar usuario (las cuentas y sesiones se eliminan en cascade)
+        sqlx::query!(
+            r#"
+            DELETE FROM users WHERE id = $1
+            "#,
+            id
+        )
+        .execute(db)
+        .await?;
+
+        Ok(())
+    }
+}
+
