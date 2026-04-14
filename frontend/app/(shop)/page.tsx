@@ -1,15 +1,148 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { products, getFeaturedProducts } from '@/features/product/data/products';
-import { categories } from '@/features/product/data/categories';
+import { listProducts, listCategories, ProductResponse, CategoryResponse, categorySlugToId } from '@/shared/lib/api';
 import { ProductCard } from '@/features/product/components/ProductCard';
-import { ArrowRight, Cpu, Shield, Truck, Headphones } from 'lucide-react';
+import { ArrowRight, Cpu, Shield, Truck, Headphones, Loader2 } from 'lucide-react';
 import styles from './page.module.css';
 
+function mapToFrontendProduct(p: ProductResponse, categorySlug?: string) {
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    category: categorySlugToId[categorySlug || ''] || 'unknown',
+    brand: p.brand || '',
+    price: p.price,
+    originalPrice: p.original_price,
+    image: p.image || '',
+    images: p.image ? [p.image] : [],
+    description: p.description || '',
+    specs: p.specs || {},
+    stock: p.stock,
+    rating: 0,
+    reviews: 0,
+    featured: p.featured,
+  };
+}
+
+function mapToFrontendCategory(c: CategoryResponse, count: number) {
+  const slugToId: Record<string, string> = {
+    "procesadores": "cpu",
+    "tarjetas-graficas": "gpu",
+    "memoria": "ram",
+    "almacenamiento": "storage",
+    "placas-base": "motherboard",
+    "fuentes-alimentacion": "psu",
+    "monitores": "monitor",
+    "perifericos": "peripherals",
+    "accesorios": "accessories",
+  };
+
+  return {
+    id: slugToId[c.slug] || c.slug,
+    name: c.name,
+    slug: c.slug,
+    icon: 'Monitor',
+    count,
+  };
+}
+
 export default function HomePage() {
-  const featured = getFeaturedProducts();
-  const deals = products.filter((p) => p.originalPrice).slice(0, 4);
+  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [productsData, categoriesData] = await Promise.all([
+          listProducts({ limit: 100 }),
+          listCategories(),
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Mapear productos al formato del frontend
+  const frontendProducts = useMemo(() => {
+    return products.map(p => mapToFrontendProduct(p, p.category_id));
+  }, [products]);
+
+  // Contar productos por categoría
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach(p => {
+      if (p.category_id) {
+        counts[p.category_id] = (counts[p.category_id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [products]);
+
+  // Mapear categorías al formato del frontend
+  const frontendCategories = useMemo(() => {
+    return categories.map(c => mapToFrontendCategory(c, categoryCounts[c.slug] || 0));
+  }, [categories, categoryCounts]);
+
+  const featured = frontendProducts.filter(p => p.featured);
+  const deals = frontendProducts.filter(p => p.originalPrice && p.originalPrice > p.price).slice(0, 4);
+
+  if (loading) {
+    return (
+      <div className={styles.loading}>
+        <Loader2 className={styles.spinner} />
+      </div>
+    );
+  }
+
+  // Si no hay productos, mostrar estado vacío
+  if (products.length === 0) {
+    return (
+      <div>
+        {/* Hero */}
+        <section className={styles.hero} >
+          <div className={styles.container}>
+            <div className={styles.heroContent}>
+              <h1 className={styles.title}>
+                Hardware de <span>Alto Rendimiento</span>
+              </h1>
+
+              <p className={styles.subtitle}>
+                Los mejores componentes para tu PC. CPUs, GPUs, RAM y más de las marcas líderes al mejor precio.
+              </p>
+
+              <div className={styles.heroActions}>
+                <Link href="/admin/products" className={styles.primaryBtn}>
+                  Agregar Productos
+                  <ArrowRight size={18} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Message */}
+        <section className={styles.section}>
+          <div className={styles.emptyState}>
+            <p>No hay productos disponibles</p>
+            <span>Dirígete al panel de administración para agregar productos</span>
+            <Link href="/admin/products" className={styles.primaryBtn}>
+              Ir al Panel de Productos
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -65,7 +198,7 @@ export default function HomePage() {
         <h2 className={styles.sectionTitle}>Categorías</h2>
 
         <div className={styles.categoriesGrid}>
-          {categories.map((cat) => (
+          {frontendCategories.map((cat) => (
             <Link
               key={cat.id}
               href={`/shop?categoria=${cat.slug}`}
@@ -78,38 +211,42 @@ export default function HomePage() {
       </section >
 
       {/* Featured */}
-      < section className={styles.section} >
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Productos Destacados</h2>
+      {featured.length > 0 && (
+        < section className={styles.section} >
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Productos Destacados</h2>
 
-          <Link href="/shop" className={styles.link}>
-            Ver todos <ArrowRight size={14} />
-          </Link>
-        </div>
+            <Link href="/shop" className={styles.link}>
+              Ver todos <ArrowRight size={14} />
+            </Link>
+          </div>
 
-        <div className={styles.productsGrid}>
-          {featured.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section >
+          <div className={styles.productsGrid}>
+            {featured.slice(0, 4).map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section >
+      )}
 
       {/* Deals */}
-      < section className={styles.section} >
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>🔥 Ofertas del Día</h2>
+      {deals.length > 0 && (
+        < section className={styles.section} >
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>🔥 Ofertas del Día</h2>
 
-          <Link href="/shop" className={styles.link}>
-            Ver todas <ArrowRight size={14} />
-          </Link>
-        </div>
+            <Link href="/shop" className={styles.link}>
+              Ver todas <ArrowRight size={14} />
+            </Link>
+          </div>
 
-        <div className={styles.dealsGrid}>
-          {deals.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section >
+          <div className={styles.dealsGrid}>
+            {deals.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section >
+      )}
     </div>
   );
 }

@@ -1,14 +1,58 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { products } from '@/features/product/data/products';
-import { categories } from '@/features/product/data/categories';
+import { listProducts, ProductResponse, listCategories, CategoryResponse, categorySlugToId } from '@/shared/lib/api';
 import { ProductCard } from '@/features/product/components/ProductCard';
 import styles from './ShopClient.module.css';
 import { Sidebar } from '@/features/shop/components/Sidebar';
 import { TopBar } from '@/features/shop/components/TopBar';
 import { BreadCrumb } from '@/features/shop/components/BreadCrumb';
+import { Loader2 } from 'lucide-react';
+
+// Convertir del formato del backend al formato del frontend
+function mapToFrontendProduct(p: ProductResponse, categorySlug?: string) {
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    category: categorySlugToId[categorySlug || ''] || 'unknown',
+    brand: p.brand || '',
+    price: p.price,
+    originalPrice: p.original_price,
+    image: p.image || '',
+    images: p.image ? [p.image] : [],
+    description: p.description || '',
+    specs: p.specs || {},
+    stock: p.stock,
+    rating: 0,
+    reviews: 0,
+    featured: p.featured,
+  };
+}
+
+// Convertir categoría del backend al formato del frontend
+function mapToFrontendCategory(c: CategoryResponse, count: number) {
+  const slugToId: Record<string, string> = {
+    "procesadores": "cpu",
+    "tarjetas-graficas": "gpu",
+    "memoria": "ram",
+    "almacenamiento": "storage",
+    "placas-base": "motherboard",
+    "fuentes-alimentacion": "psu",
+    "monitores": "monitor",
+    "perifericos": "peripherals",
+    "accesorios": "accessories",
+  };
+
+  return {
+    id: slugToId[c.slug] || c.slug,
+    name: c.name,
+    slug: c.slug,
+    icon: 'Monitor',
+    count,
+  };
+}
 
 export default function ShopClient() {
   const searchParams = useSearchParams();
@@ -16,9 +60,50 @@ export default function ShopClient() {
 
   const categorySlug = searchParams.get('categoria');
 
+  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000]);
   const [sortBy, setSortBy] = useState('featured');
-  const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [productsData, categoriesData] = await Promise.all([
+          listProducts({ limit: 100 }),
+          listCategories(),
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Contar productos por categoría
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach(p => {
+      if (p.category_id) {
+        counts[p.category_id] = (counts[p.category_id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [products]);
+
+  // Mapear categorías al formato del frontend
+  const frontendCategories = useMemo(() => {
+    return categories.map(c => mapToFrontendCategory(c, categoryCounts[c.slug] || 0));
+  }, [categories, categoryCounts]);
+
+  // Mapear productos al formato del frontend
+  const frontendProducts = useMemo(() => {
+    return products.map(p => mapToFrontendProduct(p, p.category_id));
+  }, [products]);
 
   const activeCategory = categories.find((c) => c.slug === categorySlug);
 
@@ -35,10 +120,10 @@ export default function ShopClient() {
   };
 
   const filtered = useMemo(() => {
-    let result = [...products];
+    let result = [...frontendProducts];
 
     if (activeCategory) {
-      result = result.filter((p) => p.category === activeCategory.id);
+      result = result.filter((p) => p.category === activeCategory.slug);
     }
 
     result = result.filter(
@@ -66,24 +151,40 @@ export default function ShopClient() {
     }
 
     return result;
-  }, [activeCategory, priceRange, sortBy]);
+  }, [frontendProducts, activeCategory, priceRange, sortBy]);
 
   const brands = useMemo(() => {
     const filteredByCategory = activeCategory
-      ? products.filter((p) => p.category === activeCategory.id)
-      : products;
+      ? frontendProducts.filter((p) => p.category === activeCategory.slug)
+      : frontendProducts;
 
     return [...new Set(filteredByCategory.map((p) => p.brand))];
-  }, [activeCategory]);
+  }, [frontendProducts, activeCategory]);
+
+  if (loading) {
+    return (
+      <div className={styles.loading}>
+        <Loader2 className={styles.spinner} />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
-      <BreadCrumb activeCategory={activeCategory} />
+      <BreadCrumb 
+        activeCategory={activeCategory ? {
+          id: activeCategory.slug,
+          name: activeCategory.name,
+          slug: activeCategory.slug,
+          icon: 'Monitor',
+          count: categoryCounts[activeCategory.slug] || 0,
+        } : undefined} 
+      />
 
       <div className={styles.layout}>
         <Sidebar
-          categories={categories}
-          products={products}
+          categories={frontendCategories}
+          products={frontendProducts}
           categorySlug={categorySlug}
           priceRange={priceRange}
           brands={brands}
@@ -94,15 +195,21 @@ export default function ShopClient() {
         {/* Main */}
         <div className={styles.main}>
           <TopBar
-            products={products}
-            categories={categories}
+            products={frontendProducts}
+            categories={frontendCategories}
             categorySlug={categorySlug}
-            showFilters={showFilters}
-            activeCategory={activeCategory}
+            showFilters={false}
+            activeCategory={activeCategory ? {
+              id: activeCategory.slug,
+              name: activeCategory.name,
+              slug: activeCategory.slug,
+              icon: 'Monitor',
+              count: categoryCounts[activeCategory.slug] || 0,
+            } : undefined}
             filtered={filtered}
             sortBy={sortBy}
             setSortBy={(e) => setSortBy(e.target.value)}
-            setShowFilters={setShowFilters}
+            setShowFilters={() => {}}
             updateCategory={updateCategory}
           />
 
@@ -124,4 +231,4 @@ export default function ShopClient() {
       </div>
     </div>
   );
-};
+}
