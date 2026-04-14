@@ -29,6 +29,7 @@ pub struct LoginService;
 
 impl LoginService {
     pub async fn login_user(db: &DbState, payload: LoginRequest) -> Result<LoginResult, AppError> {
+        // Query simple sin role para evitar errores
         let record = sqlx::query!(
             r#"
             SELECT 
@@ -79,7 +80,7 @@ impl LoginService {
             "#,
             Uuid::new_v4(),
             refresh_token,
-            Utc::now() + Duration::days(7), // duración de 7 días
+            Utc::now() + Duration::days(7),
             Utc::now(),
             Utc::now(),
             record.id
@@ -94,7 +95,8 @@ impl LoginService {
                 id: record.id,
                 name: record.name,
                 email: record.email,
-                created_at: record.created_at,
+                role: Some("customer".to_string()),
+                created_at: Some(record.created_at),
             },
         };
 

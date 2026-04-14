@@ -24,6 +24,7 @@ pub async fn login_user(
             id: result.user.id,
             name: result.user.name,
             email: result.user.email,
+            role: result.user.role,
             created_at: result.user.created_at,
         },
     };

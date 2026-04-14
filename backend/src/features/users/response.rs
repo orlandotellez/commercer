@@ -5,9 +5,9 @@ pub struct UserResponse {
     pub id: String,
     pub name: String,
     pub email: String,
-    pub role: String,
+    pub role: Option<String>,
     pub email_verified: bool,
-    pub created_at: String,
+    pub created_at: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

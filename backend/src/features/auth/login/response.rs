@@ -13,5 +13,6 @@ pub struct UserResponse {
     pub id: Uuid,
     pub name: String,
     pub email: String,
-    pub created_at: DateTime<Utc>,
+    pub role: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
 }

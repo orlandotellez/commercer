@@ -4,56 +4,56 @@ use uuid::Uuid;
 use crate::{
     features::auth::register::request::RegisterRequest,
     shared::{
-        errors::AppError, helpers::password::hash_password, models::user_model::User,
-        state::DbState,
+        errors::AppError, helpers::password::hash_password, state::DbState,
     },
 };
 
 pub struct RegisterService;
 
 impl RegisterService {
-    pub async fn register_user(db: &DbState, payload: RegisterRequest) -> Result<User, AppError> {
+    pub async fn register_user(db: &DbState, payload: RegisterRequest) -> Result<(), AppError> {
         let hashed_password: String = hash_password(&payload.password)?;
+
+        // Rol por defecto
+        let role = if payload.role.is_empty() {
+            "customer".to_string()
+        } else {
+            payload.role
+        };
+        
+        // Validar rol
+        if !["admin", "staff", "customer"].contains(&role.as_str()) {
+            return Err(AppError::BadRequest("Invalid role".into()));
+        }
 
         // iniciamos una transaccion para poder crear el usuario solo si se crea el account(si el
         // account falla no se crea el usuario)
         let mut tx = db.begin().await?;
 
         // crear el usuario
-        let user: User = sqlx::query_as!(
-            User,
+        let user = sqlx::query!(
             r#"
                 INSERT INTO users (
                     id,
                     name,
                     email,
                     email_verified,
-                    image,
                     role,
                     created_at,
                     updated_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                RETURNING 
-                    id,
-                    name,
-                    email,
-                    email_verified,
-                    image,
-                    role,
-                    created_at,
-                    updated_at
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING id
             "#,
             Uuid::new_v4(),
             payload.name,
             payload.email,
             false,
-            Option::<String>::None,
-            payload.role,
+            role,
             Utc::now(),
             Utc::now()
         )
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
 
         // crear el account(si falla no se crea el usuario)
@@ -71,8 +71,8 @@ impl RegisterService {
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             "#,
             Uuid::new_v4(),
-            user.email,
-            "credentials", // por default será "credentials", más adelante sepuede poner otro provider_id como "google", "github"... etc
+            payload.email,
+            "credentials",
             user.id,
             hashed_password,
             Utc::now(),
@@ -84,6 +84,6 @@ impl RegisterService {
         // confirmar transaccion(crear usuario y account)
         tx.commit().await?;
 
-        Ok(user)
+        Ok(())
     }
 }
