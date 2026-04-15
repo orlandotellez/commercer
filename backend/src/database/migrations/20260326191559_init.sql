@@ -7,7 +7,7 @@ CREATE TABLE users (
   email TEXT NOT NULL UNIQUE, 
   email_verified BOOLEAN NOT NULL, 
   image TEXT, 
-  role TEXT NOT NULL DEFAULT 'customer', 
+  role TEXT NOT NULL DEFAULT 'customer',  -- customer, staff, admin
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL, 
   updated_at timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -68,7 +68,7 @@ CREATE TABLE product (
   description TEXT,
   price REAL NOT NULL,
   stock INTEGER NOT NULL DEFAULT 0,
-  original_price REAL,
+  original_price DECIMAL(10,2),  -- nullable ahora
   image_url TEXT,
   brand TEXT,
   specs JSONB,

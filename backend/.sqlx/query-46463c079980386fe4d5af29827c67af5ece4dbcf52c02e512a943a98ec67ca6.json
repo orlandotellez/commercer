@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT \n                id::text as \"id\", \n                name, \n                slug, \n                description, \n                price as \"price\", \n                COALESCE(original_price, 0.0) as \"original_price: Option<f64>\", \n                image_url as \"image\", \n                category_id::text as \"category_id\", \n                brand, \n                stock as \"stock\", \n                specs, \n                COALESCE(active, false) as \"active\", \n                COALESCE(featured, false) as \"featured\", \n                created_at::text as \"created_at\"\n            FROM product\n            WHERE id = $1\n            ",
+  "query": "\n            UPDATE product SET\n                name = COALESCE($1, name),\n                slug = COALESCE($2, slug),\n                description = COALESCE($3, description),\n                price = COALESCE($4, price),\n                original_price = $5,\n                image_url = COALESCE($6, image_url),\n                category_id = $7,\n                brand = COALESCE($8, brand),\n                stock = COALESCE($9, stock),\n                specs = COALESCE($10, specs),\n                active = COALESCE($11, active),\n                featured = COALESCE($12, featured),\n                updated_at = CURRENT_TIMESTAMP\n            WHERE id = $13\n            RETURNING \n                id::text as \"id\", \n                name, \n                slug, \n                description, \n                price as \"price\", \n                original_price, \n                image_url as \"image\", \n                category_id::text as \"category_id\", \n                brand, \n                stock as \"stock\", \n                specs, \n                active, \n                featured, \n                created_at::text as \"created_at\"\n            ",
   "describe": {
     "columns": [
       {
@@ -30,7 +30,7 @@
       },
       {
         "ordinal": 5,
-        "name": "original_price: Option<f64>",
+        "name": "original_price",
         "type_info": "Numeric"
       },
       {
@@ -76,6 +76,18 @@
     ],
     "parameters": {
       "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Float4",
+        "Numeric",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int4",
+        "Jsonb",
+        "Bool",
+        "Bool",
         "Uuid"
       ]
     },
@@ -85,16 +97,16 @@
       false,
       true,
       false,
-      null,
+      true,
       true,
       null,
       true,
       false,
       true,
-      null,
-      null,
+      true,
+      true,
       null
     ]
   },
-  "hash": "ab71df5677ef776d42f5ff3d376743ba752e03e7dc8fae78802daea9813084e6"
+  "hash": "46463c079980386fe4d5af29827c67af5ece4dbcf52c02e512a943a98ec67ca6"
 }

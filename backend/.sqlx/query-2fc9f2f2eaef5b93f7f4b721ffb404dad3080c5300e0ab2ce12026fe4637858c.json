@@ -1,0 +1,43 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE category SET\n                name = COALESCE($1, name),\n                slug = COALESCE($2, slug),\n                description = COALESCE($3, description)\n            WHERE id = $4\n            RETURNING \n                id::text as \"id\", \n                name, \n                slug, \n                description\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "2fc9f2f2eaef5b93f7f4b721ffb404dad3080c5300e0ab2ce12026fe4637858c"
+}

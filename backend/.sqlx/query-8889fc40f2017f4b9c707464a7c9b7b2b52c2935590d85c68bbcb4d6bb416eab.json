@@ -1,0 +1,43 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO category (id, name, slug, description)\n            VALUES ($1, $2, $3, $4)\n            RETURNING \n                id::text as \"id\", \n                name, \n                slug, \n                description\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "8889fc40f2017f4b9c707464a7c9b7b2b52c2935590d85c68bbcb4d6bb416eab"
+}

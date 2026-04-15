@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT \n                id::text as \"id\", \n                name, \n                slug, \n                description, \n                price as \"price\", \n                COALESCE(original_price, 0.0) as \"original_price: Option<f64>\", \n                image_url as \"image\", \n                category_id::text as \"category_id\", \n                brand, \n                stock as \"stock\", \n                specs, \n                COALESCE(active, false) as \"active\", \n                COALESCE(featured, false) as \"featured\", \n                created_at::text as \"created_at\"\n            FROM product\n            ORDER BY created_at DESC\n            LIMIT $1 OFFSET $2\n            ",
+  "query": "\n            INSERT INTO product (\n                id, name, slug, description, price, original_price, \n                image_url, category_id, brand, stock, specs, active, featured\n            ) VALUES (\n                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13\n            )\n            RETURNING \n                id::text as \"id\", \n                name, \n                slug, \n                description, \n                price as \"price\", \n                original_price, \n                image_url as \"image\", \n                category_id::text as \"category_id\", \n                brand, \n                stock as \"stock\", \n                specs, \n                active, \n                featured, \n                created_at::text as \"created_at\"\n            ",
   "describe": {
     "columns": [
       {
@@ -30,7 +30,7 @@
       },
       {
         "ordinal": 5,
-        "name": "original_price: Option<f64>",
+        "name": "original_price",
         "type_info": "Numeric"
       },
       {
@@ -76,8 +76,19 @@
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Int8"
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Float4",
+        "Numeric",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int4",
+        "Jsonb",
+        "Bool",
+        "Bool"
       ]
     },
     "nullable": [
@@ -86,16 +97,16 @@
       false,
       true,
       false,
-      null,
+      true,
       true,
       null,
       true,
       false,
       true,
-      null,
-      null,
+      true,
+      true,
       null
     ]
   },
-  "hash": "2625e187122ef67d342516a1d47bb750d7844926a64655d652bdcf29fa1e7501"
+  "hash": "d705c89c853d2ce932cf4c91b97fd9cd4f872ff11d26b890ccb2958d3697c656"
 }
