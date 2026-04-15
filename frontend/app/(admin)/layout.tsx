@@ -17,14 +17,31 @@ export default function ShopLayout({ children }: DashboardLayout) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar sesión
+    // Verificar sesión y rol
     const token = localStorage.getItem('access_token');
+    const userStr = localStorage.getItem('user');
 
     if (!token) {
       router.push('/login');
-    } else {
-      setIsLoading(false);
+      return;
     }
+
+    // Verificar rol del usuario
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        // Solo staff y admin pueden acceder al admin
+        if (user.role === 'customer') {
+          router.push('/');
+          return;
+        }
+      } catch {
+        router.push('/login');
+        return;
+      }
+    }
+
+    setIsLoading(false);
   }, [router]);
 
   if (isLoading) {
