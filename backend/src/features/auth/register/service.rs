@@ -3,9 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     features::auth::register::request::RegisterRequest,
-    shared::{
-        errors::AppError, helpers::password::hash_password, state::DbState,
-    },
+    shared::{errors::AppError, helpers::password::hash_password, state::DbState},
 };
 
 pub struct RegisterService;
@@ -14,17 +12,7 @@ impl RegisterService {
     pub async fn register_user(db: &DbState, payload: RegisterRequest) -> Result<(), AppError> {
         let hashed_password: String = hash_password(&payload.password)?;
 
-        // Rol por defecto
-        let role = if payload.role.is_empty() {
-            "customer".to_string()
-        } else {
-            payload.role
-        };
-        
-        // Validar rol
-        if !["admin", "staff", "customer"].contains(&role.as_str()) {
-            return Err(AppError::BadRequest("Invalid role".into()));
-        }
+        let role = "customer";
 
         // iniciamos una transaccion para poder crear el usuario solo si se crea el account(si el
         // account falla no se crea el usuario)

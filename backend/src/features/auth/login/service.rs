@@ -36,6 +36,7 @@ impl LoginService {
                 u.id,
                 u.name,
                 u.email,
+                u.role,
                 u.created_at,
                 a.password
             FROM account a
@@ -60,6 +61,9 @@ impl LoginService {
         if !is_valid {
             return Err(AppError::Unauthorized("Invalid email or password".into()));
         }
+
+        // Obtener el role real del usuario
+        let role = record.role;
 
         // Generar JWT
         let access_token: String = encode_jwt(record.id)?;
@@ -95,7 +99,7 @@ impl LoginService {
                 id: record.id,
                 name: record.name,
                 email: record.email,
-                role: Some("customer".to_string()),
+                role: Some(role),
                 created_at: Some(record.created_at),
             },
         };

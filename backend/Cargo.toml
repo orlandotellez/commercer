@@ -46,4 +46,4 @@ validator = { version = "0.19", features = ["derive"] }
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-bigdecimal = "0.4.10"
+bigdecimal = { version = "0.4.10", features = ["serde"] }

@@ -1,4 +1,5 @@
-use serde::Deserialize;
+use bigdecimal::BigDecimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct CreateProductRequest {
@@ -6,7 +7,7 @@ pub struct CreateProductRequest {
     pub slug: String,
     pub description: Option<String>,
     pub price: f32,
-    pub original_price: Option<f32>,
+    pub original_price: Option<BigDecimal>,
     pub image: Option<String>,
     pub category_id: Option<String>,
     pub brand: Option<String>,
@@ -22,7 +23,7 @@ pub struct UpdateProductRequest {
     pub slug: Option<String>,
     pub description: Option<String>,
     pub price: Option<f32>,
-    pub original_price: Option<f32>,
+    pub original_price: Option<BigDecimal>,
     pub image: Option<String>,
     pub category_id: Option<String>,
     pub brand: Option<String>,

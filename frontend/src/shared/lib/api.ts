@@ -1,5 +1,14 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
+// Función helper para obtener headers con auth
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('access_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+}
+
 export interface CreateProductPayload {
   name: string;
   slug: string;
@@ -70,15 +79,14 @@ export async function listCategories(): Promise<CategoryResponse[]> {
 export async function createCategory(payload: CreateCategoryPayload): Promise<CategoryResponse> {
   const res = await fetch(`${API_URL}/categories`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     credentials: 'include',
     body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
-    throw new Error('Failed to create category');
+    const error = await res.json().catch(() => ({ message: 'Failed to create category' }));
+    throw new Error(error.message || 'Failed to create category');
   }
 
   return res.json();
@@ -87,11 +95,13 @@ export async function createCategory(payload: CreateCategoryPayload): Promise<Ca
 export async function deleteCategory(id: string): Promise<{ success: boolean }> {
   const res = await fetch(`${API_URL}/categories/${id}`, {
     method: 'DELETE',
+    headers: getAuthHeaders(),
     credentials: 'include',
   });
 
   if (!res.ok) {
-    throw new Error('Failed to delete category');
+    const error = await res.json().catch(() => ({ message: 'Failed to delete category' }));
+    throw new Error(error.message || 'Failed to delete category');
   }
 
   return res.json();
@@ -162,15 +172,14 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Pro
 export async function createProduct(payload: CreateProductPayload): Promise<ProductResponse> {
   const res = await fetch(`${API_URL}/products`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     credentials: 'include',
     body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
-    throw new Error('Failed to create product');
+    const error = await res.json().catch(() => ({ message: 'Failed to create product' }));
+    throw new Error(error.message || 'Failed to create product');
   }
 
   return res.json();

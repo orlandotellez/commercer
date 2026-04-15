@@ -134,10 +134,6 @@ export default function HomePage() {
         <section className={styles.section}>
           <div className={styles.emptyState}>
             <p>No hay productos disponibles</p>
-            <span>Dirígete al panel de administración para agregar productos</span>
-            <Link href="/admin/products" className={styles.primaryBtn}>
-              Ir al Panel de Productos
-            </Link>
           </div>
         </section>
       </div>
