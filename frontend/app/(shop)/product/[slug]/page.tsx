@@ -12,6 +12,23 @@ import { ProductNotFound } from '@/features/product/components/ProductNotFound';
 import { Loader2 } from 'lucide-react';
 
 function mapToFrontendProduct(p: ProductResponse) {
+  // Convertir original_price a número si existe
+  let originalPrice: number | undefined = undefined;
+  if (p.original_price !== undefined && p.original_price !== null) {
+    if (typeof p.original_price === 'number') {
+      originalPrice = p.original_price;
+    } else if (typeof p.original_price === 'string') {
+      originalPrice = parseFloat(p.original_price);
+    } else if (p.original_price && typeof p.original_price === 'object') {
+      // Puede venir como BigDecimal object { n: number, ... }
+      const val = (p.original_price as any).n ?? (p.original_price as any).value ?? (p.original_price as any)._;
+      if (typeof val === 'number') originalPrice = val;
+      else if (typeof val === 'string') originalPrice = parseFloat(val);
+    }
+    // Si sigue siendo NaN, poner undefined
+    if (isNaN(originalPrice as number)) originalPrice = undefined;
+  }
+    
   return {
     id: p.id,
     name: p.name,
@@ -19,7 +36,7 @@ function mapToFrontendProduct(p: ProductResponse) {
     category: categorySlugToId[p.category_id || ''] || 'unknown',
     brand: p.brand || '',
     price: p.price,
-    originalPrice: p.original_price,
+    originalPrice,
     image: p.image || '',
     images: p.image ? [p.image] : [],
     description: p.description || '',
