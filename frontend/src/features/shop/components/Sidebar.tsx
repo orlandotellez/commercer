@@ -22,6 +22,8 @@ export const Sidebar = ({
   updateCategory,
   setPriceRange
 }: SidebarProps) => {
+  console.log(categories)
+  console.log(products)
   return (
     <>
       {/* Sidebar */}
@@ -46,7 +48,7 @@ export const Sidebar = ({
 
             {categories.map((cat) => {
               const count = products.filter(
-                (p) => p.category === cat.id
+                (p) => p.category === cat.slug
               ).length;
 
               return (

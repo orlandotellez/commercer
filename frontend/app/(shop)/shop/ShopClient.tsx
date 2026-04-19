@@ -11,7 +11,7 @@ import { BreadCrumb } from '@/features/shop/components/BreadCrumb';
 import { Loader2 } from 'lucide-react';
 
 // Convertir del formato del backend al formato del frontend
-function mapToFrontendProduct(p: ProductResponse, categorySlug?: string) {
+function mapToFrontendProduct(p: ProductResponse, categoryIdToSlug: Record<string, string>) {
   // Convertir original_price a número si existe
   let originalPrice: number | undefined = undefined;
   if (p.original_price !== undefined && p.original_price !== null) {
@@ -25,15 +25,18 @@ function mapToFrontendProduct(p: ProductResponse, categorySlug?: string) {
       if (typeof val === 'number') originalPrice = val;
       else if (typeof val === 'string') originalPrice = parseFloat(val);
     }
-    // Si sigue siendo NaN, poner undefined
+    // Si sigue siendo NaN,poner undefined
     if (isNaN(originalPrice as number)) originalPrice = undefined;
   }
+    
+  // Convertir category_id (UUID) a slug
+  const categorySlug = p.category_id ? categoryIdToSlug[p.category_id] || '' : '';
     
   return {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    category: categorySlugToId[categorySlug || ''] || 'unknown',
+    category: categorySlug,
     brand: p.brand || '',
     price: p.price,
     originalPrice,
@@ -101,16 +104,28 @@ export default function ShopClient() {
     fetchData();
   }, []);
 
-  // Contar productos por categoría
+  // Mapa de category_id (UUID) → category slug
+  const categoryIdToSlug = useMemo(() => {
+    const map: Record<string, string> = {};
+    categories.forEach(c => {
+      map[c.id] = c.slug;
+    });
+    return map;
+  }, [categories]);
+
+  // Contar productos por categoría (usando el slug)
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     products.forEach(p => {
       if (p.category_id) {
-        counts[p.category_id] = (counts[p.category_id] || 0) + 1;
+        const slug = categoryIdToSlug[p.category_id];
+        if (slug) {
+          counts[slug] = (counts[slug] || 0) + 1;
+        }
       }
     });
     return counts;
-  }, [products]);
+  }, [products, categoryIdToSlug]);
 
   // Mapear categorías al formato del frontend
   const frontendCategories = useMemo(() => {
@@ -119,8 +134,8 @@ export default function ShopClient() {
 
   // Mapear productos al formato del frontend
   const frontendProducts = useMemo(() => {
-    return products.map(p => mapToFrontendProduct(p, p.category_id));
-  }, [products]);
+    return products.map(p => mapToFrontendProduct(p, categoryIdToSlug));
+  }, [products, categoryIdToSlug]);
 
   const activeCategory = categories.find((c) => c.slug === categorySlug);
 
