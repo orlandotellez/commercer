@@ -17,10 +17,8 @@ import {
 import styles from "./page.module.css";
 import {
   listOrders,
-  updateOrderStatus,
-  deleteOrder,
-  OrderResponse,
 } from "@/shared/lib/api";
+import { OrderResponse } from "@/shared/types";
 
 // Tipos para la UI
 type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
@@ -61,7 +59,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
@@ -81,7 +79,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -95,7 +93,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         <ChevronLeft className={styles.paginationIcon} />
         Anterior
       </button>
-      
+
       <div className={styles.paginationNumbers}>
         {getPageNumbers().map((page, index) => (
           <span key={index}>
@@ -112,7 +110,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
           </span>
         ))}
       </div>
-      
+
       <button
         className={styles.paginationButton}
         onClick={() => onPageChange(currentPage + 1)}
@@ -281,7 +279,7 @@ export default function OrdersPage() {
             }}
           />
         </div>
-        
+
         <button
           className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ""}`}
           onClick={() => setShowFilters(!showFilters)}
@@ -315,7 +313,7 @@ export default function OrdersPage() {
               <option value="cancelled">Cancelado</option>
             </select>
           </div>
-          
+
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>Desde</label>
             <div className={styles.dateInputWrapper}>
@@ -331,7 +329,7 @@ export default function OrdersPage() {
               />
             </div>
           </div>
-          
+
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>Hasta</label>
             <div className={styles.dateInputWrapper}>
@@ -347,7 +345,7 @@ export default function OrdersPage() {
               />
             </div>
           </div>
-          
+
           <button className={styles.clearFilters} onClick={clearFilters}>
             Limpiar filtros
           </button>
@@ -411,50 +409,50 @@ export default function OrdersPage() {
                 </tr>
               ) : (
                 orders.map((order) => (
-                <tr key={order.id} className={styles.tableRow}>
-                  <td className={styles.tableCell}>
-                    <span className={styles.orderId}>{order.id}</span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <div className={styles.customerInfo}>
-                      <span className={styles.customerName}>{order.customer}</span>
-                      <span className={styles.customerEmail}>{order.email}</span>
-                    </div>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={styles.orderDate}>
-                      {new Date(order.date).toLocaleDateString("es-AR")}
-                    </span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={styles.orderItems}>{order.items}</span>
-                  </td>
-                  <td className={`${styles.tableCell} ${styles.tableCellRight}`}>
-                    <span className={styles.orderTotal}>
-                      ${order.total.toLocaleString("es-AR")}
-                    </span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <span className={`${styles.orderStatus} ${statusClassMap[order.status]}`}>
-                      {statusLabels[order.status]}
-                    </span>
-                  </td>
-                  <td className={styles.tableCell}>
-                    <div className={styles.actions}>
-                      <button className={styles.actionButton} title="Ver detalles">
-                        <Eye className={styles.actionIcon} />
-                      </button>
-                      <button className={styles.actionButton} title="Editar">
-                        <Edit className={styles.actionIcon} />
-                      </button>
-                      <button className={`${styles.actionButton} ${styles.actionButtonDanger}`} title="Eliminar">
-                        <Trash2 className={styles.actionIcon} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
+                  <tr key={order.id} className={styles.tableRow}>
+                    <td className={styles.tableCell}>
+                      <span className={styles.orderId}>{order.id}</span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <div className={styles.customerInfo}>
+                        <span className={styles.customerName}>{order.customer}</span>
+                        <span className={styles.customerEmail}>{order.email}</span>
+                      </div>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span className={styles.orderDate}>
+                        {new Date(order.date).toLocaleDateString("es-AR")}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span className={styles.orderItems}>{order.items}</span>
+                    </td>
+                    <td className={`${styles.tableCell} ${styles.tableCellRight}`}>
+                      <span className={styles.orderTotal}>
+                        ${order.total.toLocaleString("es-AR")}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <span className={`${styles.orderStatus} ${statusClassMap[order.status]}`}>
+                        {statusLabels[order.status]}
+                      </span>
+                    </td>
+                    <td className={styles.tableCell}>
+                      <div className={styles.actions}>
+                        <button className={styles.actionButton} title="Ver detalles">
+                          <Eye className={styles.actionIcon} />
+                        </button>
+                        <button className={styles.actionButton} title="Editar">
+                          <Edit className={styles.actionIcon} />
+                        </button>
+                        <button className={`${styles.actionButton} ${styles.actionButtonDanger}`} title="Eliminar">
+                          <Trash2 className={styles.actionIcon} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
