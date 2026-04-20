@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Search,
   Filter,
@@ -11,10 +11,18 @@ import {
   Trash2,
   Download,
   Calendar,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import styles from "./page.module.css";
+import {
+  listOrders,
+  updateOrderStatus,
+  deleteOrder,
+  OrderResponse,
+} from "@/shared/lib/api";
 
-// Tipos
+// Tipos para la UI
 type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
 
 interface Order {
@@ -25,41 +33,22 @@ interface Order {
   status: OrderStatus;
   date: string;
   items: number;
+  user_id: string;
 }
 
-// Datos mock
-const generateMockOrders = (): Order[] => {
-  const statuses: OrderStatus[] = ["pending", "processing", "shipped", "completed", "cancelled"];
-  const customers = [
-    { name: "Juan Pérez", email: "juan@example.com" },
-    { name: "María García", email: "maria@example.com" },
-    { name: "Carlos López", email: "carlos@example.com" },
-    { name: "Ana Martínez", email: "ana@example.com" },
-    { name: "Pedro Sánchez", email: "pedro@example.com" },
-    { name: "Laura Rodríguez", email: "laura@example.com" },
-    { name: "Miguel Torres", email: "miguel@example.com" },
-    { name: "Sofia Ramirez", email: "sofia@example.com" },
-    { name: "Diego Flores", email: "diego@example.com" },
-    { name: "Carmen Ruiz", email: "carmen@example.com" },
-  ];
-
-  return Array.from({ length: 85 }, (_, i) => {
-    const customer = customers[Math.floor(Math.random() * customers.length)];
-    const date = new Date(2026, Math.floor(Math.random() * 4), Math.floor(Math.random() * 28) + 1);
-    
-    return {
-      id: `ORD-${7800 + i}`,
-      customer: customer.name,
-      email: customer.email,
-      total: Math.floor(Math.random() * 2000) + 100,
-      status: statuses[Math.floor(Math.random() * statuses.length)],
-      date: date.toISOString().split("T")[0],
-      items: Math.floor(Math.random() * 5) + 1,
-    };
-  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-};
-
-const mockOrders = generateMockOrders();
+// Mapear respuesta de API a formato de UI
+function mapApiOrderToUi(apiOrder: OrderResponse): Order {
+  return {
+    id: apiOrder.id,
+    customer: apiOrder.user_id, // Por ahora mostrar user_id como cliente
+    email: "", // El backend no devuelve email del usuario todavía
+    total: apiOrder.total,
+    status: apiOrder.status as OrderStatus,
+    date: apiOrder.created_at?.split("T")[0] || "",
+    items: apiOrder.items.length,
+    user_id: apiOrder.user_id,
+  };
+}
 
 // Componente de paginación
 interface PaginationProps {
@@ -163,32 +152,70 @@ export default function OrdersPage() {
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Estados de la API
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Cargar pedidos desde la API
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params: any = {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      };
+
+      if (statusFilter !== "all") {
+        params.status = statusFilter;
+      }
+
+      if (dateFrom) {
+        params.date_from = dateFrom;
+      }
+
+      if (dateTo) {
+        params.date_to = dateTo;
+      }
+
+      const response = await listOrders(params);
+
+      const mappedOrders = response.orders.map(mapApiOrderToUi);
+
+      // Filtrar por search term del lado del cliente
+      let filtered = mappedOrders;
+      if (searchTerm) {
+        filtered = mappedOrders.filter(
+          (order) =>
+            order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.customer.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      setOrders(filtered);
+      setTotal(response.total);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar pedidos");
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, statusFilter, dateFrom, dateTo, searchTerm]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const filteredOrders = useMemo(() => {
-    return mockOrders.filter((order) => {
-      const matchesSearch = 
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-      
-      const orderDate = new Date(order.date);
-      const matchesDateFrom = !dateFrom || orderDate >= new Date(dateFrom);
-      const matchesDateTo = !dateTo || orderDate <= new Date(dateTo);
-      
-      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
-    });
-  }, [searchTerm, statusFilter, dateFrom, dateTo]);
+  useEffect(() => {
+    if (mounted) {
+      fetchOrders();
+    }
+  }, [mounted, fetchOrders]);
 
-  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
-  const paginatedOrders = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredOrders, currentPage]);
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -200,6 +227,7 @@ export default function OrdersPage() {
     setDateFrom("");
     setDateTo("");
     setCurrentPage(1);
+    fetchOrders();
   };
 
   const activeFiltersCount = [
@@ -207,6 +235,16 @@ export default function OrdersPage() {
     dateFrom,
     dateTo,
   ].filter(Boolean).length;
+
+  // Refrescar cuando cambian los filtros
+  useEffect(() => {
+    if (mounted && !loading) {
+      const timeoutId = setTimeout(() => {
+        fetchOrders();
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [statusFilter, dateFrom, dateTo]);
 
   if (!mounted) return null;
 
@@ -316,41 +354,63 @@ export default function OrdersPage() {
         </div>
       )}
 
+      {/* Error State */}
+      {error && (
+        <div className={styles.errorState}>
+          <AlertCircle className={styles.errorIcon} />
+          <span>{error}</span>
+          <button onClick={fetchOrders} className={styles.retryButton}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className={styles.loadingState}>
+          <Loader2 className={styles.loadingSpinner} />
+          <span>Cargando pedidos...</span>
+        </div>
+      )}
+
       {/* Results Info */}
-      <div className={styles.resultsInfo}>
-        <span className={styles.resultsCount}>
-          {filteredOrders.length} pedidos encontrados
-        </span>
-        {activeFiltersCount > 0 && (
-          <span className={styles.resultsPage}>
-            Página {currentPage} de {totalPages}
+      {!loading && !error && (
+        <div className={styles.resultsInfo}>
+          <span className={styles.resultsCount}>
+            {orders.length} pedidos encontrados
           </span>
-        )}
-      </div>
+          {totalPages > 1 && (
+            <span className={styles.resultsPage}>
+              Página {currentPage} de {totalPages}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Orders Table */}
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr className={styles.tableHead}>
-              <th className={styles.tableHeadCell}>ID</th>
-              <th className={styles.tableHeadCell}>Cliente</th>
-              <th className={styles.tableHeadCell}>Fecha</th>
-              <th className={styles.tableHeadCell}>Items</th>
-              <th className={`${styles.tableHeadCell} ${styles.tableHeadCellRight}`}>Total</th>
-              <th className={styles.tableHeadCell}>Estado</th>
-              <th className={styles.tableHeadCell}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedOrders.length === 0 ? (
-              <tr>
-                <td colSpan={7} className={styles.emptyState}>
-                  No se encontraron pedidos
-                </td>
+      {!loading && !error && (
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr className={styles.tableHead}>
+                <th className={styles.tableHeadCell}>ID</th>
+                <th className={styles.tableHeadCell}>Cliente</th>
+                <th className={styles.tableHeadCell}>Fecha</th>
+                <th className={styles.tableHeadCell}>Items</th>
+                <th className={`${styles.tableHeadCell} ${styles.tableHeadCellRight}`}>Total</th>
+                <th className={styles.tableHeadCell}>Estado</th>
+                <th className={styles.tableHeadCell}>Acciones</th>
               </tr>
-            ) : (
-              paginatedOrders.map((order) => (
+            </thead>
+            <tbody>
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className={styles.emptyState}>
+                    No se encontraron pedidos
+                  </td>
+                </tr>
+              ) : (
+                orders.map((order) => (
                 <tr key={order.id} className={styles.tableRow}>
                   <td className={styles.tableCell}>
                     <span className={styles.orderId}>{order.id}</span>
@@ -395,12 +455,13 @@ export default function OrdersPage() {
                 </tr>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {!loading && !error && totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

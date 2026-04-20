@@ -70,3 +70,46 @@ export interface Address {
   zipCode: string;
   country: string;
 }
+
+
+export interface OrderItemResponse {
+  id: string;
+  product_id: string;
+  product_name?: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
+export interface OrderResponse {
+  id: string;
+  user_id: string;
+  status: string;
+  subtotal: number;
+  taxes: number;
+  total: number;
+  created_at?: string;
+  items: OrderItemResponse[];
+}
+
+export interface OrdersListResponse {
+  orders: OrderResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface ListOrdersParams {
+  search?: string;
+  status?: string;
+  user_id?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface UpdateOrderStatusPayload {
+  status: string;
+}
+
