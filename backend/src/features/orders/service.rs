@@ -29,7 +29,6 @@ impl OrdersService {
             r#"
             SELECT 
                 id::text as "id",
-                user_id::text as "user_id",
                 status,
                 subtotal,
                 taxes,
@@ -52,7 +51,6 @@ impl OrdersService {
             let items = Self::get_order_items(db, &order_id).await?;
             order_responses.push(OrderResponse {
                 id: order_id,
-                user_id: order.user_id.unwrap_or_default(),
                 status: order.status,
                 subtotal: order.subtotal.to_f64().unwrap_or(0.0),
                 taxes: order.taxes.to_f64().unwrap_or(0.0),
@@ -111,7 +109,6 @@ impl OrdersService {
             r#"
             SELECT 
                 id::text as "id",
-                user_id::text as "user_id",
                 status,
                 subtotal,
                 taxes,
@@ -131,7 +128,6 @@ impl OrdersService {
 
         Ok(OrderResponse {
             id: order_id,
-            user_id: order.user_id.unwrap_or_default(),
             status: order.status,
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
             taxes: order.taxes.to_f64().unwrap_or(0.0),
@@ -268,7 +264,6 @@ impl OrdersService {
             WHERE id = $2
             RETURNING 
                 id::text as "id",
-                user_id::text as "user_id",
                 status,
                 subtotal,
                 taxes,
@@ -287,7 +282,6 @@ impl OrdersService {
 
         Ok(OrderResponse {
             id: order_id,
-            user_id: order.user_id.unwrap_or_default(),
             status: order.status,
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
             taxes: order.taxes.to_f64().unwrap_or(0.0),
