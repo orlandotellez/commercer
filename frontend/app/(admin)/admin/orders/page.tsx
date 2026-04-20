@@ -13,6 +13,7 @@ import {
   Calendar,
   Loader2,
   AlertCircle,
+  X,
 } from "lucide-react";
 import styles from "./page.module.css";
 import {
@@ -23,6 +24,15 @@ import { OrderResponse } from "@/shared/types";
 // Tipos para la UI
 type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
 
+interface OrderItem {
+  id: string;
+  product_id: string;
+  product_name?: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
 interface Order {
   id: string;
   customer: string;
@@ -32,6 +42,10 @@ interface Order {
   date: string;
   items: number;
   user_id: string;
+  subtotal?: number;
+  taxes?: number;
+  created_at?: string;
+  order_items?: OrderItem[];
 }
 
 // Mapear respuesta de API a formato de UI
@@ -139,6 +153,75 @@ const statusClassMap: Record<OrderStatus, string> = {
   cancelled: styles.orderStatusCancelled,
 };
 
+// Modal de ver pedido
+const ViewOrderModal: React.FC<{
+  order: Order | null;
+  isOpen: boolean;
+  onClose: () => void;
+}> = ({ order, isOpen, onClose }) => {
+  if (!isOpen || !order) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Detalle del Pedido</h2>
+          <button className={styles.modalClose} onClick={onClose}>
+            <X className={styles.modalCloseIcon} />
+          </button>
+        </div>
+        <div className={styles.modalBody}>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>ID</span>
+            <span className={styles.detailValue}>{order.id}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Cliente</span>
+            <span className={styles.detailValue}>{order.customer}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Fecha</span>
+            <span className={styles.detailValue}>
+              {order.date ? new Date(order.date).toLocaleDateString("es-AR") : "N/A"}
+            </span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Estado</span>
+            <span className={`${styles.orderStatus} ${statusClassMap[order.status]}`}>
+              {statusLabels[order.status]}
+            </span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Items</span>
+            <span className={styles.detailValue}>{order.items} productos</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Subtotal</span>
+            <span className={styles.detailValue}>
+              ${(order.subtotal || order.total / 1.21).toFixed(2)}
+            </span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>IVA</span>
+            <span className={styles.detailValue}>
+              ${(order.taxes || order.total - (order.total / 1.21)).toFixed(2)}
+            </span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Total</span>
+            <span className={styles.detailValue}>${order.total.toFixed(2)}</span>
+          </div>
+        </div>
+        <div className={styles.modalActions}>
+          <button className={styles.modalCancel} onClick={onClose}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ITEMS_PER_PAGE = 10;
 
 export default function OrdersPage() {
@@ -149,6 +232,8 @@ export default function OrdersPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Estados de la API
   const [orders, setOrders] = useState<Order[]>([]);
@@ -439,11 +524,15 @@ export default function OrdersPage() {
                     </td>
                     <td className={styles.tableCell}>
                       <div className={styles.actions}>
-                        <button className={styles.actionButton} title="Ver detalles">
+                        <button 
+                          className={styles.actionButton} 
+                          title="Ver detalles"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowViewModal(true);
+                          }}
+                        >
                           <Eye className={styles.actionIcon} />
-                        </button>
-                        <button className={styles.actionButton} title="Editar">
-                          <Edit className={styles.actionIcon} />
                         </button>
                         <button className={`${styles.actionButton} ${styles.actionButtonDanger}`} title="Eliminar">
                           <Trash2 className={styles.actionIcon} />
@@ -466,6 +555,16 @@ export default function OrdersPage() {
           onPageChange={handlePageChange}
         />
       )}
+
+      {/* View Order Modal */}
+      <ViewOrderModal
+        order={selectedOrder}
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedOrder(null);
+        }}
+      />
     </div>
   );
 }

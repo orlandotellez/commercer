@@ -786,9 +786,10 @@
 
 /* Spinner */
 .spinner {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1rem;
+  height: 1rem;
   animation: spin 1s linear infinite;
+  display: inline-flex;
 }
 
 @keyframes spin {
@@ -837,4 +838,79 @@
     align-items: flex-start;
     gap: 0.5rem;
   }
+}
+
+/* Detail rows in view modal */
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-weight: 500;
+  color: #6B7280;
+  font-size: 0.875rem;
+}
+
+.detailValue {
+  color: #000000;
+  font-size: 0.875rem;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+/* Modal buttons */
+.modalCancel {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #000000;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.modalCancel:hover {
+  background-color: #f8fafc;
+}
+
+.modalCancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modalSubmit {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background-color: #0f1729;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.modalSubmit:hover {
+  background-color: #1e293b;
+}
+
+.modalSubmit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }

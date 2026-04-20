@@ -21,6 +21,7 @@ import styles from "./page.module.css";
 import {
   listProducts,
   createProduct,
+  updateProduct,
   deleteProduct,
   generateSlug,
   listCategories,
@@ -50,6 +51,31 @@ interface AdminProduct {
   description?: string;
   featured: boolean;
 }
+
+const ITEMS_PER_PAGE = 10;
+
+const statusLabels: Record<ProductStatus, string> = {
+  active: "Activo",
+  inactive: "Inactivo",
+};
+
+const statusClassMap: Record<ProductStatus, string> = {
+  active: styles.productStatusActive,
+  inactive: styles.productStatusInactive,
+};
+
+// Map de categorías del sistema
+const categoryMap: Record<string, string> = {
+  "Procesadores": "cpu",
+  "Tarjetas Gráficas": "gpu",
+  "Memoria": "ram",
+  "Almacenamiento": "storage",
+  "Placas Madre": "motherboard",
+  "Fuentes de Poder": "psu",
+  "Monitores": "monitor",
+  "Periféricos": "peripherals",
+  "Accesorios PC": "accessories",
+};
 
 // Componente de paginación
 interface PaginationProps {
@@ -123,33 +149,85 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         <ChevronRight className={styles.paginationIcon} />
       </button>
     </div>
+);
+}
+
+// Modal de ver producto
+const ViewProductModal: React.FC<{
+  product: AdminProduct | null;
+  isOpen: boolean;
+  onClose: () => void;
+}> = ({ product, isOpen, onClose }) => {
+  if (!isOpen || !product) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Detalle del Producto</h2>
+          <button className={styles.modalClose} onClick={onClose}>
+            <X className={styles.modalCloseIcon} />
+          </button>
+        </div>
+        <div className={styles.modalBody}>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>ID</span>
+            <span className={styles.detailValue}>{product.id}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Nombre</span>
+            <span className={styles.detailValue}>{product.name}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Slug</span>
+            <span className={styles.detailValue}>{product.slug}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Categoría</span>
+            <span className={styles.detailValue}>{product.category || "Sin categoría"}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Marca</span>
+            <span className={styles.detailValue}>{product.brand || "No especificada"}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Precio</span>
+            <span className={styles.detailValue}>${product.price.toFixed(2)}</span>
+          </div>
+          {product.originalPrice && typeof product.originalPrice === "number" && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Precio Original</span>
+              <span className={styles.detailValue}>${product.originalPrice.toFixed(2)}</span>
+            </div>
+          )}
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Stock</span>
+            <span className={styles.detailValue}>{product.stock} unidades</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Estado</span>
+            <span className={styles.detailValue}>{product.status === "active" ? "Activo" : "Inactivo"}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Destacado</span>
+            <span className={styles.detailValue}>{product.featured ? "Sí" : "No"}</span>
+          </div>
+          {product.description && (
+            <div className={styles.detailRow} style={{ flexDirection: "column", alignItems: "flex-start" }}>
+              <span className={styles.detailLabel}>Descripción</span>
+              <span className={styles.detailValue}>{product.description}</span>
+            </div>
+          )}
+        </div>
+        <div className={styles.modalActions}>
+          <button className={styles.modalCancel} onClick={onClose}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
-
-const statusLabels: Record<ProductStatus, string> = {
-  active: "Activo",
-  inactive: "Inactivo",
-};
-
-const statusClassMap: Record<ProductStatus, string> = {
-  active: styles.productStatusActive,
-  inactive: styles.productStatusInactive,
-};
-
-// Categorías del shop (mapeadas de los products de prueba)
-const categoryMap: Record<string, string> = {
-  cpu: "procesadores",
-  gpu: "tarjetas-graficas",
-  ram: "memoria",
-  storage: "almacenamiento",
-  motherboard: "placas-base",
-  psu: "fuentes-alimentacion",
-  monitor: "monitores",
-  peripherals: "perifericos",
-  accessories: "accesorios",
-};
-
-const ITEMS_PER_PAGE = 10;
 
 export default function ProductsPage() {
   const [mounted, setMounted] = useState(false);
@@ -159,6 +237,10 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -336,6 +418,46 @@ export default function ProductsPage() {
     } catch (err) {
       console.error("Error deleting product:", err);
       alert("Error al eliminar producto");
+    }
+  };
+
+  const handleSubmitEditProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name || !formData.price || !selectedProduct) {
+      alert("Nombre y precio son requeridos");
+      return;
+    }
+
+    setIsEditing(true);
+
+    try {
+      const slug = formData.slug || generateSlug(formData.name);
+      
+      const payload: Partial<CreateProductPayload> = {
+        name: formData.name,
+        slug,
+        description: formData.description,
+        price: formData.price,
+        original_price: formData.original_price,
+        image: formData.image,
+        category_id: formData.category_id,
+        brand: formData.brand,
+        stock: formData.stock,
+        active: formData.active,
+        featured: formData.featured,
+      };
+
+      await updateProduct(selectedProduct.id, payload);
+      setShowEditModal(false);
+      setSelectedProduct(null);
+      resetForm();
+      await fetchProducts();
+    } catch (err) {
+      console.error("Error updating product:", err);
+      alert("Error al actualizar producto");
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -619,10 +741,36 @@ export default function ProductsPage() {
                   </td>
                   <td className={styles.tableCell}>
                     <div className={styles.actions}>
-                      <button className={styles.actionButton} title="Ver detalles">
+                      <button 
+                        className={styles.actionButton} 
+                        title="Ver detalles"
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setShowViewModal(true);
+                        }}
+                      >
                         <Eye className={styles.actionIcon} />
                       </button>
-                      <button className={styles.actionButton} title="Editar">
+                      <button 
+                        className={styles.actionButton} 
+                        title="Editar"
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setFormData({
+                            name: product.name,
+                            slug: product.slug,
+                            description: product.description || "",
+                            price: product.price,
+                            original_price: product.originalPrice,
+                            stock: product.stock,
+                            category_id: product.categoryId,
+                            brand: product.brand,
+                            active: product.status === "active",
+                            featured: product.featured,
+                          });
+                          setShowEditModal(true);
+                        }}
+                      >
                         <Edit className={styles.actionIcon} />
                       </button>
                       <button 
@@ -799,6 +947,167 @@ export default function ProductsPage() {
                 <button type="submit" className={styles.submitButton}>
                   <Upload className={styles.addIcon} />
                   Crear Producto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Product Modal */}
+      <ViewProductModal
+        product={selectedProduct}
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedProduct(null);
+        }}
+      />
+
+      {/* Edit Product Modal */}
+      {showEditModal && selectedProduct && (
+        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Editar Producto</h2>
+              <button className={styles.modalClose} onClick={() => setShowEditModal(false)}>
+                <X className={styles.modalCloseIcon} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitEditProduct} className={styles.modalBody}>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Nombre *</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={formData.name || ""}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Slug</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={formData.slug || ""}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Precio *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className={styles.formInput}
+                    value={formData.price || 0}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Precio Original</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className={styles.formInput}
+                    value={formData.original_price || ""}
+                    onChange={(e) => setFormData({ ...formData, original_price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Stock</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.formInput}
+                    value={formData.stock || 0}
+                    onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Marca</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={formData.brand || ""}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Categoría</label>
+                  <select
+                    className={styles.formSelect}
+                    value={formData.category_id || ""}
+                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                  >
+                    <option value="">Seleccionar categoría</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.formGroup} style={{ marginTop: "1rem" }}>
+                <label className={styles.formLabel}>Descripción</label>
+                <textarea
+                  className={styles.formTextarea}
+                  value={formData.description || ""}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className={styles.formRow}>
+                <label className={styles.formCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={formData.active ?? true}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                  />
+                  <span>Activo</span>
+                </label>
+
+                <label className={styles.formCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={formData.featured ?? false}
+                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  />
+                  <span>Destacado</span>
+                </label>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.modalCancel}
+                  onClick={() => setShowEditModal(false)}
+                  disabled={isEditing}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.modalSubmit} disabled={isEditing}>
+                  {isEditing ? (
+                    <>
+                      <Loader2 className={styles.spinner} />
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar Cambios"
+                  )}
                 </button>
               </div>
             </form>
