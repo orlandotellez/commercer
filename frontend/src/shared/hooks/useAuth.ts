@@ -49,6 +49,7 @@ export function useAuth() {
 
     localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('user_id', data.user.id);
     setUser(data.user);
 
     return data.user;

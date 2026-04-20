@@ -6,13 +6,21 @@ import {
   Mail,
   Lock,
   Bell,
-  Palette,
-  Globe,
   Shield,
   Save,
   Camera,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  Phone,
 } from "lucide-react";
 import styles from "./page.module.css";
+import {
+  getCurrentUser,
+  updateProfile,
+  changePassword,
+  UserProfile,
+} from "@/shared/lib/api";
 
 interface SettingsSection {
   id: string;
@@ -23,18 +31,21 @@ interface SettingsSection {
 const sections: SettingsSection[] = [
   { id: "profile", title: "Perfil", icon: User },
   { id: "notifications", title: "Notificaciones", icon: Bell },
-  { id: "appearance", title: "Apariencia", icon: Palette },
   { id: "security", title: "Seguridad", icon: Shield },
 ];
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   
   // Profile form state
-  const [name, setName] = useState("Admin User");
-  const [email, setEmail] = useState("admin@techcomponents.com");
-  const [phone, setPhone] = useState("+54 11 1234-5678");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   
   // Notifications settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -42,22 +53,98 @@ export default function SettingsPage() {
   const [inventoryAlerts, setInventoryAlerts] = useState(true);
   const [marketingEmails, setMarketingEmails] = useState(false);
   
-  // Appearance settings
-  const [theme, setTheme] = useState("dark");
-  const [language, setLanguage] = useState("es-AR");
-  
   // Security settings
   const [twoFactor, setTwoFactor] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Cargar datos del usuario
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        setName(user.name || "");
+        setEmail(user.email || "");
+        setPhone(user.phone || "");
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        setError("Error al cargar los datos del usuario");
+        // Usar datos por defecto si falla
+        setName("Usuario");
+        setEmail("usuario@ejemplo.com");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (mounted) {
+      fetchUser();
+    }
+  }, [mounted]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleSave = () => {
-    alert("Configuración guardada (placeholder)");
+  const showSuccess = (message: string) => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateProfile({ name, email, phone });
+      showSuccess("Perfil actualizado correctamente");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar perfil");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      await changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      showSuccess("Contraseña cambiada correctamente");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cambiar contraseña");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!mounted) return null;
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loadingState}>
+          <Loader2 className={styles.loadingSpinner} />
+          <span>Cargando...</span>
+        </div>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -68,10 +155,28 @@ export default function SettingsPage() {
             <p className={styles.sectionDescription}>
               Actualiza tu información personal y de contacto
             </p>
-            
+
+            {/* Success message */}
+            {success && (
+              <div className={styles.successMessage}>
+                <CheckCircle size={16} />
+                {success}
+              </div>
+            )}
+
+            {/* Error message */}
+            {error && activeSection === "profile" && (
+              <div className={styles.errorMessage}>
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
             <div className={styles.avatarSection}>
               <div className={styles.avatar}>
-                <span className={styles.avatarText}>AU</span>
+                <span className={styles.avatarText}>
+                  {name.charAt(0).toUpperCase()}
+                </span>
                 <button className={styles.avatarEdit}>
                   <Camera className={styles.avatarEditIcon} />
                 </button>
@@ -81,7 +186,7 @@ export default function SettingsPage() {
                 <p className={styles.avatarHint}>JPG, PNG o GIF. Máximo 2MB</p>
               </div>
             </div>
-            
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <User className={styles.formLabelIcon} />
@@ -94,7 +199,7 @@ export default function SettingsPage() {
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
-            
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <Mail className={styles.formLabelIcon} />
@@ -110,7 +215,7 @@ export default function SettingsPage() {
             
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
-                <Globe className={styles.formLabelIcon} />
+                <Phone className={styles.formLabelIcon} />
                 Teléfono
               </label>
               <input
@@ -121,13 +226,21 @@ export default function SettingsPage() {
               />
             </div>
             
-            <button className={styles.saveButton} onClick={handleSave}>
-              <Save className={styles.saveIcon} />
-              Guardar cambios
+            <button
+              className={styles.saveButton}
+              onClick={handleSaveProfile}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className={styles.spinner} />
+              ) : (
+                <Save className={styles.saveIcon} />
+              )}
+              {saving ? "Guardando..." : "Guardar cambios"}
             </button>
           </div>
         );
-        
+
       case "notifications":
         return (
           <div className={styles.sectionContent}>
@@ -198,84 +311,13 @@ export default function SettingsPage() {
               </div>
             </div>
             
-            <button className={styles.saveButton} onClick={handleSave}>
+            <button className={styles.saveButton} onClick={() => showSuccess("Notificaciones guardadas")}>
               <Save className={styles.saveIcon} />
               Guardar cambios
             </button>
           </div>
         );
-        
-      case "appearance":
-        return (
-          <div className={styles.sectionContent}>
-            <h2 className={styles.sectionTitle}>Apariencia</h2>
-            <p className={styles.sectionDescription}>
-              Personaliza la interfaz del dashboard
-            </p>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Tema</label>
-              <div className={styles.radioGroup}>
-                <label className={styles.radioItem}>
-                  <input
-                    type="radio"
-                    name="theme"
-                    value="light"
-                    checked={theme === "light"}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className={styles.radioInput}
-                  />
-                  <span className={styles.radioLabel}>Claro</span>
-                </label>
-                <label className={styles.radioItem}>
-                  <input
-                    type="radio"
-                    name="theme"
-                    value="dark"
-                    checked={theme === "dark"}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className={styles.radioInput}
-                  />
-                  <span className={styles.radioLabel}>Oscuro</span>
-                </label>
-                <label className={styles.radioItem}>
-                  <input
-                    type="radio"
-                    name="theme"
-                    value="system"
-                    checked={theme === "system"}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className={styles.radioInput}
-                  />
-                  <span className={styles.radioLabel}>Sistema</span>
-                </label>
-              </div>
-            </div>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <Globe className={styles.formLabelIcon} />
-                Idioma
-              </label>
-              <select
-                className={styles.formSelect}
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-              >
-                <option value="es-AR">Español (Argentina)</option>
-                <option value="es-ES">Español (España)</option>
-                <option value="en-US">English (US)</option>
-                <option value="pt-BR">Português (Brasil)</option>
-              </select>
-            </div>
-            
-            <button className={styles.saveButton} onClick={handleSave}>
-              <Save className={styles.saveIcon} />
-              Guardar cambios
-            </button>
-          </div>
-        );
-        
+
       case "security":
         return (
           <div className={styles.sectionContent}>
@@ -283,7 +325,23 @@ export default function SettingsPage() {
             <p className={styles.sectionDescription}>
               Configura las opciones de seguridad de tu cuenta
             </p>
-            
+
+            {/* Success message */}
+            {success && (
+              <div className={styles.successMessage}>
+                <CheckCircle size={16} />
+                {success}
+              </div>
+            )}
+
+            {/* Error message */}
+            {error && activeSection === "security" && (
+              <div className={styles.errorMessage}>
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <Lock className={styles.formLabelIcon} />
@@ -293,17 +351,23 @@ export default function SettingsPage() {
                 type="password"
                 className={styles.formInput}
                 placeholder="Contraseña actual"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
               />
               <input
                 type="password"
                 className={styles.formInput}
                 placeholder="Nueva contraseña"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
                 style={{ marginTop: "0.5rem" }}
               />
               <input
                 type="password"
                 className={styles.formInput}
                 placeholder="Confirmar contraseña"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 style={{ marginTop: "0.5rem" }}
               />
             </div>
@@ -325,13 +389,21 @@ export default function SettingsPage() {
               </div>
             </div>
             
-            <button className={styles.saveButton} onClick={handleSave}>
-              <Save className={styles.saveIcon} />
-              Guardar cambios
+            <button
+              className={styles.saveButton}
+              onClick={handleChangePassword}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className={styles.spinner} />
+              ) : (
+                <Save className={styles.saveIcon} />
+              )}
+              {saving ? "Cambiando..." : "Cambiar contraseña"}
             </button>
           </div>
         );
-        
+
       default:
         return null;
     }

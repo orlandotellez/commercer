@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, LayoutDashboard, Package, Settings, ShoppingCart, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutDashboard, Package, Settings, ShoppingCart, Users, LogOut } from "lucide-react";
 import { useSideBarStore } from "@/shared/store/useSidebarStore";
+import { useAuth } from "@/shared/hooks/useAuth";
 import styles from "./Sidebar.module.css"
 
 
@@ -17,6 +18,7 @@ export const SideBar = () => {
 
 
   const { collapsed, setCollapsed } = useSideBarStore();
+  const { logout, user } = useAuth();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -71,6 +73,24 @@ export const SideBar = () => {
               <span className={styles.collapseText}>Colapsar</span>
             </>
           )}
+        </button>
+      </div>
+
+      {/* Logout Button */}
+      <div className={styles.logoutContainer}>
+        {!collapsed && user && (
+          <div className={styles.userInfo}>
+            <span className={styles.userName}>{user.name}</span>
+            <span className={styles.userRole}>{user.role}</span>
+          </div>
+        )}
+        <button 
+          onClick={logout} 
+          className={`${styles.navItem} ${styles.logoutButton}`}
+          title="Cerrar sesión"
+        >
+          <LogOut />
+          {!collapsed && <span>Cerrar sesión</span>}
         </button>
       </div>
 

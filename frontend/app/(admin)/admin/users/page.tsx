@@ -28,6 +28,7 @@ interface User {
   email: string;
   role: string;
   email_verified: boolean;
+  phone?: string;
   created_at: string;
 }
 
@@ -280,6 +281,216 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
   );
 };
 
+// Modal de ver usuario
+interface ViewUserModalProps {
+  user: User | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const ViewUserModal: React.FC<ViewUserModalProps> = ({ user, isOpen, onClose }) => {
+  if (!isOpen || !user) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Detalle del Usuario</h2>
+          <button className={styles.modalClose} onClick={onClose}>
+            <X className={styles.modalCloseIcon} />
+          </button>
+        </div>
+        <div className={styles.modalBody}>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>ID</span>
+            <span className={styles.detailValue}>{user.id}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Nombre</span>
+            <span className={styles.detailValue}>{user.name}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Email</span>
+            <span className={styles.detailValue}>{user.email}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Teléfono</span>
+            <span className={styles.detailValue}>{user.phone || "No registrado"}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Rol</span>
+            <span className={`${styles.userRole} ${roleClassMap[user.role]}`}>
+              {roleLabels[user.role] || user.role}
+            </span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Email verificado</span>
+            <span className={styles.detailValue}>
+              {user.email_verified ? "Sí" : "No"}
+            </span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Fecha de registro</span>
+            <span className={styles.detailValue}>
+              {user.created_at ? new Date(user.created_at).toLocaleDateString("es-AR") : "N/A"}
+            </span>
+          </div>
+        </div>
+        <div className={styles.modalActions}>
+          <button className={styles.modalCancel} onClick={onClose}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modal de editar usuario
+interface EditUserModalProps {
+  user: User | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const EditUserModal: React.FC<EditUserModalProps> = ({ user, isOpen, onClose, onSuccess }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("customer");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+      setRole(user.role);
+    }
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setError("No hay sesión iniciada");
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/users/${user?.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, email, role }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Error al actualizar usuario");
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen || !user) return null;
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Editar Usuario</h2>
+          <button className={styles.modalClose} onClick={onClose}>
+            <X className={styles.modalCloseIcon} />
+          </button>
+        </div>
+
+        <form className={styles.modalBody} onSubmit={handleSubmit}>
+          {error && (
+            <div className={styles.modalError}>
+              <AlertCircle className={styles.errorIcon} />
+              {error}
+            </div>
+          )}
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Nombre completo</label>
+            <input
+              type="text"
+              className={styles.formInput}
+              placeholder="Juan Pérez"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Email</label>
+            <input
+              type="email"
+              className={styles.formInput}
+              placeholder="juan@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Rol</label>
+            <select
+              className={styles.formSelect}
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="customer">Cliente</option>
+              <option value="staff">Personal</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          <div className={styles.modalActions}>
+            <button
+              type="button"
+              className={styles.modalCancel}
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.modalSubmit}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className={styles.spinner} />
+                  Guardando...
+                </>
+              ) : (
+                "Guardar Cambios"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 export default function UsersPage() {
   const [mounted, setMounted] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -290,6 +501,9 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
   // El layout ya verifica la sesión - solo necesitamos cargar datos
@@ -570,10 +784,24 @@ export default function UsersPage() {
                     </td>
                     <td className={styles.tableCell}>
                       <div className={styles.actions}>
-                        <button className={styles.actionButton} title="Ver detalles">
+                        <button 
+                          className={styles.actionButton} 
+                          title="Ver detalles"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowViewModal(true);
+                          }}
+                        >
                           <Eye className={styles.actionIcon} />
                         </button>
-                        <button className={styles.actionButton} title="Editar">
+                        <button 
+                          className={styles.actionButton} 
+                          title="Editar"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowEditModal(true);
+                          }}
+                        >
                           <Edit className={styles.actionIcon} />
                         </button>
                         <button
@@ -609,6 +837,29 @@ export default function UsersPage() {
         onSuccess={() => {
           fetchUsers(currentPage);
           setShowModal(false);
+        }}
+      />
+
+      {/* View User Modal */}
+      <ViewUserModal
+        user={selectedUser}
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedUser(null);
+        }}
+      />
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        user={selectedUser}
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        onSuccess={() => {
+          fetchUsers(currentPage);
         }}
       />
     </div>
