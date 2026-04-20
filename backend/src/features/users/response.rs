@@ -7,6 +7,8 @@ pub struct UserResponse {
     pub email: String,
     pub role: Option<String>,
     pub email_verified: bool,
+    pub phone: Option<String>,
+    pub image: Option<String>,
     pub created_at: Option<String>,
 }
 

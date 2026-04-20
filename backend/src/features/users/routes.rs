@@ -9,4 +9,5 @@ pub fn routes() -> Router<DbState> {
         .route("/{id}", axum::routing::get(handler::get_user))
         .route("/{id}", axum::routing::put(handler::update_user))
         .route("/{id}", axum::routing::delete(handler::delete_user))
+        .route("/{id}/password", axum::routing::put(handler::change_password))
 }

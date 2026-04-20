@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     features::users::{
-        request::CreateUserRequest, request::UpdateUserRequest, response::UserResponse,
+        request::ChangePasswordRequest, request::CreateUserRequest, request::UpdateUserRequest, response::UserResponse,
     },
     shared::{errors::AppError, helpers::password::hash_password, state::DbState},
 };
@@ -46,6 +46,7 @@ impl UsersService {
                 email,
                 email_verified,
                 COALESCE(role, 'customer') as role,
+                phone,
                 created_at::text as created_at
             FROM users
             ORDER BY created_at DESC
@@ -65,6 +66,8 @@ impl UsersService {
                 email: u.email,
                 role: Some(u.role.unwrap_or_else(|| "customer".to_string())),
                 email_verified: u.email_verified,
+                phone: u.phone,
+                image: None,
                 created_at: u.created_at,
             })
             .collect())
@@ -79,6 +82,7 @@ impl UsersService {
                 email,
                 email_verified,
                 COALESCE(role, 'customer') as role,
+                phone,
                 created_at::text as created_at
             FROM users
             WHERE id = $1
@@ -95,6 +99,8 @@ impl UsersService {
             email: user.email,
             role: Some(user.role.unwrap_or_else(|| "customer".to_string())),
             email_verified: user.email_verified,
+            phone: user.phone,
+            image: None,
             created_at: user.created_at,
         })
     }
@@ -165,6 +171,8 @@ impl UsersService {
             email: user_email,
             role: Some(user_role),
             email_verified: user_email_verified,
+            phone: None,
+            image: None,
             created_at: user_created_at,
         })
     }
@@ -189,6 +197,7 @@ impl UsersService {
         let new_role = payload
             .role
             .unwrap_or(existing.role.unwrap_or_else(|| "customer".to_string()));
+        let new_phone = payload.phone;
 
         if !["admin", "staff", "customer"].contains(&new_role.as_str()) {
             return Err(AppError::BadRequest("Invalid role".into()));
@@ -197,13 +206,14 @@ impl UsersService {
         let user = sqlx::query!(
             r#"
             UPDATE users 
-            SET name = $1, email = $2, role = $3, updated_at = $4
-            WHERE id = $5
-            RETURNING id::text as id, name, email, email_verified, role, created_at::text as created_at
+            SET name = $1, email = $2, role = $3, phone = $4, updated_at = $5
+            WHERE id = $6
+            RETURNING id::text as id, name, email, email_verified, role, phone, created_at::text as created_at
             "#,
             new_name,
             new_email,
             new_role,
+            new_phone,
             Utc::now(),
             id
         )
@@ -226,14 +236,62 @@ impl UsersService {
             .await?;
         }
 
+        let role_str = user.role.to_string();
+        
         Ok(UserResponse {
             id: user.id.unwrap_or_default(),
             name: user.name,
             email: user.email,
-            role: Some(user.role),
+            role: Some(if role_str.is_empty() { "customer".to_string() } else { role_str }),
             email_verified: user.email_verified,
+            phone: None,
+            image: None,
             created_at: user.created_at,
         })
+    }
+
+    pub async fn change_password(
+        db: &DbState,
+        id: Uuid,
+        payload: ChangePasswordRequest,
+    ) -> Result<(), AppError> {
+        // Verificar contraseña actual
+        let account = sqlx::query!(
+            r#"
+            SELECT password FROM account WHERE user_id = $1 AND provider_id = 'credentials'
+            "#,
+            id
+        )
+        .fetch_optional(db)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Account not found".into()))?;
+
+        // Verificar que la contraseña actual es correcta
+        let password_matches = crate::shared::helpers::password::verify_password(
+            &payload.current_password,
+            &account.password.unwrap_or_default(),
+        )?;
+
+        if !password_matches {
+            return Err(AppError::Unauthorized("Contraseña actual incorrecta".into()));
+        }
+
+        // Hash nueva contraseña y actualizar
+        let hashed = hash_password(&payload.new_password)?;
+        sqlx::query!(
+            r#"
+            UPDATE account 
+            SET password = $1, updated_at = $2
+            WHERE user_id = $3 AND provider_id = 'credentials'
+            "#,
+            hashed,
+            Utc::now(),
+            id
+        )
+        .execute(db)
+        .await?;
+
+        Ok(())
     }
 
     pub async fn delete_user(db: &DbState, id: Uuid) -> Result<(), AppError> {

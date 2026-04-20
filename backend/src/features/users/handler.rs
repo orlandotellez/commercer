@@ -47,3 +47,12 @@ pub async fn delete_user(
     Ok(Json(super::response::DeleteResponse { success: true }))
 }
 
+pub async fn change_password(
+    State(db): State<DbState>,
+    Path(id): Path<uuid::Uuid>,
+    Json(payload): Json<super::request::ChangePasswordRequest>,
+) -> Result<Json<super::response::DeleteResponse>, AppError> {
+    UsersService::change_password(&db, id, payload).await?;
+    Ok(Json(super::response::DeleteResponse { success: true }))
+}
+
