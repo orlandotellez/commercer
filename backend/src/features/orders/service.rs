@@ -159,21 +159,21 @@ impl OrdersService {
             .is_some();
         
         // Si no existe, crear un usuario guest
-        let final_user_id = if !user_exists {
-            let guest_id = Uuid::new_v4();
-            sqlx::query!(
-                r#"
-                INSERT INTO users (id, name, email, role, email_verified)
-                VALUES ($1, 'Guest User', 'guest@localhost', 'customer', false)
-                "#,
-                guest_id
-            )
-            .execute(db)
-            .await?;
-            guest_id
-        } else {
-            user_id
-        };
+        //  let final_user_id = if !user_exists {
+        //      let guest_id = Uuid::new_v4();
+        //      sqlx::query!(
+        //          r#"
+        //          INSERT INTO users (id, name, email, role, email_verified)
+        //          VALUES ($1, 'Guest User', 'guest@localhost', 'customer', false)
+        //          "#,
+        //          guest_id
+        //      )
+        //      .execute(db)
+        //      .await?;
+        //      guest_id
+      //  } else {
+      //      user_id
+      //  };
 
         // Calculate totals
         let subtotal: f64 = payload.items.iter().map(|i| i.unit_price * i.quantity as f64).sum();
