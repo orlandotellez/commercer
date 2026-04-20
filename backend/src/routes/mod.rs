@@ -11,4 +11,5 @@ pub fn create_routes() -> Router<DbState> {
             "/api/v1/categories",
             features::categories::routes::categories_router(),
         )
+        .nest("/api/v1/orders", features::orders::routes::orders_router())
 }
