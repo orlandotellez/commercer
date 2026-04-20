@@ -200,7 +200,7 @@ impl OrdersService {
                 created_at::text as "created_at"
             "#,
             order_id,
-            final_user_id,
+            user_id,
             subtotal_bd,
             taxes_bd,
             total_bd
