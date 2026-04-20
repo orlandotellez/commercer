@@ -179,7 +179,7 @@ impl OrdersService {
         let order = sqlx::query!(
             r#"
             INSERT INTO orders (id, status, subtotal, taxes, total)
-            VALUES ($1, $2, 'pending', $3, $4, $5)
+            VALUES ($1, 'pending', $2, $3, $4)
             RETURNING 
                 id::text as "id",
                 status,
