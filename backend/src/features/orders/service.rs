@@ -148,16 +148,6 @@ impl OrdersService {
     ) -> Result<OrderResponse, AppError> {
         let order_id = Uuid::new_v4();
         
-        // Verificar o crear usuario guest
-        let user_id = Uuid::parse_str(&payload.user_id)
-            .map_err(|_| AppError::BadRequest("Invalid user_id".into()))?;
-        
-        // Verificar si el usuario existe
-        let user_exists = sqlx::query!("SELECT id FROM users WHERE id = $1", user_id)
-            .fetch_optional(db)
-            .await?
-            .is_some();
-        
         // Si no existe, crear un usuario guest
         //  let final_user_id = if !user_exists {
         //      let guest_id = Uuid::new_v4();
@@ -188,11 +178,10 @@ impl OrdersService {
         // Insert order
         let order = sqlx::query!(
             r#"
-            INSERT INTO orders (id, user_id, status, subtotal, taxes, total)
+            INSERT INTO orders (id, status, subtotal, taxes, total)
             VALUES ($1, $2, 'pending', $3, $4, $5)
             RETURNING 
                 id::text as "id",
-                user_id::text as "user_id",
                 status,
                 subtotal,
                 taxes,
@@ -200,7 +189,6 @@ impl OrdersService {
                 created_at::text as "created_at"
             "#,
             order_id,
-            user_id,
             subtotal_bd,
             taxes_bd,
             total_bd
@@ -254,7 +242,6 @@ impl OrdersService {
 
         Ok(OrderResponse {
             id: order.id.unwrap_or_default(),
-            user_id: order.user_id.unwrap_or_default(),
             status: order.status,
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
             taxes: order.taxes.to_f64().unwrap_or(0.0),

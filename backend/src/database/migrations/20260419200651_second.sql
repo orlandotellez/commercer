@@ -1,6 +1,5 @@
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status TEXT NOT NULL, -- pending, paid, cancelled, shipped
   subtotal DECIMAL(10, 2) NOT NULL,
   taxes DECIMAL(10, 2) NOT NULL,

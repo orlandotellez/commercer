@@ -3,7 +3,6 @@ use serde::Serialize;
 #[derive(Debug, Serialize)]
 pub struct OrderResponse {
     pub id: String,
-    pub user_id: String,
     pub status: String,
     pub subtotal: f64,
     pub taxes: f64,
