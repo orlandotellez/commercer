@@ -19,7 +19,6 @@ import {
   getCurrentUser,
   updateProfile,
   changePassword,
-  UserProfile,
 } from "@/shared/lib/api";
 
 interface SettingsSection {
@@ -41,18 +40,18 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  
+
   // Profile form state
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  
+
   // Notifications settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [orderNotifications, setOrderNotifications] = useState(true);
   const [inventoryAlerts, setInventoryAlerts] = useState(true);
   const [marketingEmails, setMarketingEmails] = useState(false);
-  
+
   // Security settings
   const [twoFactor, setTwoFactor] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -212,7 +211,7 @@ export default function SettingsPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <Phone className={styles.formLabelIcon} />
@@ -225,7 +224,7 @@ export default function SettingsPage() {
                 onChange={(e) => setPhone(e.target.value)}
               />
             </div>
-            
+
             <button
               className={styles.saveButton}
               onClick={handleSaveProfile}
@@ -248,7 +247,7 @@ export default function SettingsPage() {
             <p className={styles.sectionDescription}>
               Configura cómo y cuándo quieres recibir notificaciones
             </p>
-            
+
             <div className={styles.toggleGroup}>
               <div className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
@@ -264,7 +263,7 @@ export default function SettingsPage() {
                   <span className={styles.toggleKnob} />
                 </button>
               </div>
-              
+
               <div className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
                   <span className={styles.toggleLabel}>Notificaciones de pedidos</span>
@@ -279,7 +278,7 @@ export default function SettingsPage() {
                   <span className={styles.toggleKnob} />
                 </button>
               </div>
-              
+
               <div className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
                   <span className={styles.toggleLabel}>Alertas de inventario</span>
@@ -294,7 +293,7 @@ export default function SettingsPage() {
                   <span className={styles.toggleKnob} />
                 </button>
               </div>
-              
+
               <div className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
                   <span className={styles.toggleLabel}>Emails de marketing</span>
@@ -310,7 +309,7 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
-            
+
             <button className={styles.saveButton} onClick={() => showSuccess("Notificaciones guardadas")}>
               <Save className={styles.saveIcon} />
               Guardar cambios
@@ -371,7 +370,7 @@ export default function SettingsPage() {
                 style={{ marginTop: "0.5rem" }}
               />
             </div>
-            
+
             <div className={styles.toggleGroup}>
               <div className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
@@ -388,7 +387,7 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
-            
+
             <button
               className={styles.saveButton}
               onClick={handleChangePassword}
