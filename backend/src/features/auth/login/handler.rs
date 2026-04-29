@@ -4,17 +4,17 @@ use crate::{
         response::{LoginResponse, UserResponse},
         service::{LoginResult, LoginService},
     },
-    shared::{errors::AppError, helpers::cookies::build_session_cookie, state::DbState},
+    shared::{errors::AppError, helpers::cookies::build_session_cookie, state::AppState},
 };
 use axum::{Json, extract::State};
 use axum_extra::extract::cookie::CookieJar;
 
 pub async fn login_user(
     jar: CookieJar,
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<(CookieJar, Json<LoginResponse>), AppError> {
-    let result: LoginResult = LoginService::login_user(&db, payload).await?;
+    let result: LoginResult = LoginService::login_user(&state, payload).await?;
 
     let cookie = build_session_cookie(result.refresh_token);
 

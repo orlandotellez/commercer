@@ -2,14 +2,14 @@ use uuid::Uuid;
 
 use crate::{
     features::categories::{request::*, response::*},
-    shared::{errors::AppError, state::DbState},
+    shared::{errors::AppError, state::AppState},
 };
 
 pub struct CategoriesService;
 
 impl CategoriesService {
     /// List all categories
-    pub async fn list_categories(db: &DbState) -> Result<Vec<CategoryResponse>, AppError> {
+    pub async fn list_categories(state: &AppState) -> Result<Vec<CategoryResponse>, AppError> {
         let categories = sqlx::query!(
             r#"
             SELECT 
@@ -21,7 +21,7 @@ impl CategoriesService {
             ORDER BY name ASC
             "#
         )
-        .fetch_all(db)
+        .fetch_all(&state.db)
         .await?;
 
         Ok(categories
@@ -36,7 +36,7 @@ impl CategoriesService {
     }
 
     /// Get a single category by ID
-    pub async fn get_category(db: &DbState, id: Uuid) -> Result<CategoryResponse, AppError> {
+    pub async fn get_category(state: &AppState, id: Uuid) -> Result<CategoryResponse, AppError> {
         let category = sqlx::query!(
             r#"
             SELECT 
@@ -49,7 +49,7 @@ impl CategoriesService {
             "#,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
@@ -63,7 +63,7 @@ impl CategoriesService {
 
     /// Create a new category
     pub async fn create_category(
-        db: &DbState,
+        state: &AppState,
         payload: CreateCategoryRequest,
     ) -> Result<CategoryResponse, AppError> {
         let id = Uuid::new_v4();
@@ -83,7 +83,7 @@ impl CategoriesService {
             payload.slug,
             payload.description
         )
-        .fetch_one(db)
+        .fetch_one(&state.db)
         .await?;
 
         Ok(CategoryResponse {
@@ -96,7 +96,7 @@ impl CategoriesService {
 
     /// Update an existing category
     pub async fn update_category(
-        db: &DbState,
+        state: &AppState,
         id: Uuid,
         payload: UpdateCategoryRequest,
     ) -> Result<CategoryResponse, AppError> {
@@ -118,7 +118,7 @@ impl CategoriesService {
             payload.description,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
@@ -131,12 +131,12 @@ impl CategoriesService {
     }
 
     /// Delete a category
-    pub async fn delete_category(db: &DbState, id: Uuid) -> Result<(), AppError> {
+    pub async fn delete_category(state: &AppState, id: Uuid) -> Result<(), AppError> {
         let result = sqlx::query!(
             "DELETE FROM category WHERE id = $1",
             id
         )
-        .execute(db)
+        .execute(&state.db)
         .await?;
 
         if result.rows_affected() == 0 {

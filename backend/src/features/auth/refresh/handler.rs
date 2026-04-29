@@ -3,12 +3,12 @@ use axum_extra::extract::cookie::CookieJar;
 
 use crate::{
     features::auth::refresh::{response::RefreshResponse, service::RefreshService},
-    shared::{errors::AppError, helpers::cookies::build_session_cookie, state::DbState},
+    shared::{errors::AppError, helpers::cookies::build_session_cookie, state::AppState},
 };
 
 pub async fn refresh(
     jar: CookieJar,
-    State(db): State<DbState>,
+    State(state): State<AppState>,
 ) -> Result<(CookieJar, Json<RefreshResponse>), AppError> {
     let refresh_token = jar
         .get("refresh_token")
@@ -16,7 +16,7 @@ pub async fn refresh(
         .value()
         .to_string();
 
-    let result = RefreshService::refresh(&db, refresh_token).await?;
+    let result = RefreshService::refresh(&state, refresh_token).await?;
 
     let cookie = build_session_cookie(result.refresh_token);
 

@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
-use crate::shared::{errors::AppError, helpers::jwt::encode_jwt, state::DbState};
+use crate::shared::{errors::AppError, helpers::jwt::encode_jwt, state::AppState};
 
 pub struct RefreshResult {
     pub access_token: String,
@@ -12,7 +12,7 @@ pub struct RefreshResult {
 pub struct RefreshService;
 
 impl RefreshService {
-    pub async fn refresh(db: &DbState, refresh_token: String) -> Result<RefreshResult, AppError> {
+    pub async fn refresh(state: &AppState, refresh_token: String) -> Result<RefreshResult, AppError> {
         // Buscar sesión
         let session = sqlx::query!(
             r#"
@@ -22,7 +22,7 @@ impl RefreshService {
             "#,
             refresh_token
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?;
 
         let session = match session {
@@ -49,7 +49,7 @@ impl RefreshService {
             "#,
             refresh_token
         )
-        .execute(db)
+        .execute(&state.db)
         .await?;
 
         // crear nueva sesión
@@ -72,7 +72,7 @@ impl RefreshService {
             Utc::now(),
             session.user_id
         )
-        .execute(db)
+        .execute(&state.db)
         .await?;
 
         Ok(RefreshResult {

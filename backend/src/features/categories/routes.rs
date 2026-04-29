@@ -1,10 +1,10 @@
-use axum::Router;
 use axum::routing::{delete, get, post, put};
+use axum::Router;
 
 use super::handler::*;
-use crate::shared::state::DbState;
+use crate::shared::state::AppState;
 
-pub fn categories_router() -> Router<DbState> {
+pub fn categories_router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_categories))
         .route("/", post(create_category))

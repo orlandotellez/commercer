@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     features::products::{request::*, response::*},
-    shared::{errors::AppError, state::DbState},
+    shared::{errors::AppError, state::AppState},
 };
 
 #[derive(Debug, Clone, serde::Deserialize, Default)]
@@ -32,7 +32,7 @@ pub struct ProductsService;
 impl ProductsService {
     /// List products with optional filters.
     pub async fn list_products(
-        db: &DbState,
+        state: &AppState,
         params: ListProductsParams,
     ) -> Result<Vec<ProductResponse>, AppError> {
         let page = params.page.unwrap_or(1);
@@ -63,7 +63,7 @@ impl ProductsService {
             limit as i64,
             offset as i64
         )
-        .fetch_all(db)
+        .fetch_all(&state.db)
         .await?;
 
         Ok(products
@@ -88,7 +88,7 @@ impl ProductsService {
     }
 
     /// Get a single product by ID
-    pub async fn get_product(db: &DbState, id: Uuid) -> Result<ProductResponse, AppError> {
+    pub async fn get_product(state: &AppState, id: Uuid) -> Result<ProductResponse, AppError> {
         let product = sqlx::query!(
             r#"
             SELECT 
@@ -111,7 +111,7 @@ impl ProductsService {
             "#,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Product not found".into()))?;
 
@@ -135,7 +135,7 @@ impl ProductsService {
 
     /// Create a new product
     pub async fn create_product(
-        db: &DbState,
+        state: &AppState,
         payload: CreateProductRequest,
     ) -> Result<ProductResponse, AppError> {
         let id = Uuid::new_v4();
@@ -179,7 +179,7 @@ impl ProductsService {
             payload.active.unwrap_or(true),
             payload.featured.unwrap_or(false)
         )
-        .fetch_one(db)
+        .fetch_one(&state.db)
         .await?;
 
         Ok(ProductResponse {
@@ -202,7 +202,7 @@ impl ProductsService {
 
     /// Update an existing product
     pub async fn update_product(
-        db: &DbState,
+        state: &AppState,
         id: Uuid,
         payload: UpdateProductRequest,
     ) -> Result<ProductResponse, AppError> {
@@ -255,7 +255,7 @@ impl ProductsService {
             payload.featured,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Product not found".into()))?;
 
@@ -278,9 +278,9 @@ impl ProductsService {
     }
 
     /// Delete a product
-    pub async fn delete_product(db: &DbState, id: Uuid) -> Result<(), AppError> {
+    pub async fn delete_product(state: &AppState, id: Uuid) -> Result<(), AppError> {
         let result = sqlx::query!("DELETE FROM product WHERE id = $1", id)
-            .execute(db)
+            .execute(&state.db)
             .await?;
 
         if result.rows_affected() == 0 {

@@ -1,3 +1,6 @@
 use sqlx::PgPool;
 
-pub type DbState = PgPool;
+#[derive(Clone)]
+pub struct AppState {
+    pub db: PgPool
+}

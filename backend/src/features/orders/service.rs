@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     features::orders::{request::*, response::*},
-    shared::{errors::AppError, state::DbState},
+    shared::{errors::AppError, state::AppState},
 };
 
 pub struct OrdersService;
@@ -11,7 +11,7 @@ pub struct OrdersService;
 impl OrdersService {
     /// List orders with optional filters
     pub async fn list_orders(
-        db: &DbState,
+        state: &AppState,
         params: ListOrdersParams,
     ) -> Result<OrdersListResponse, AppError> {
         let page = params.page.unwrap_or(1);
@@ -20,7 +20,7 @@ impl OrdersService {
 
         // Get total count
         let count_result: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM orders")
-            .fetch_one(db)
+            .fetch_one(&state.db)
             .await?;
         let total = count_result.0;
 
@@ -41,14 +41,14 @@ impl OrdersService {
             limit as i64,
             offset as i64
         )
-        .fetch_all(db)
+        .fetch_all(&state.db)
         .await?;
 
         // Get items for each order
         let mut order_responses = Vec::new();
         for order in orders {
             let order_id = order.id.clone().unwrap_or_default();
-            let items = Self::get_order_items(db, &order_id).await?;
+            let items = Self::get_order_items(&state.db, &order_id).await?;
             order_responses.push(OrderResponse {
                 id: order_id,
                 status: order.status,
@@ -69,7 +69,7 @@ impl OrdersService {
     }
 
     /// Get order items by order_id
-    async fn get_order_items(db: &DbState, order_id: &str) -> Result<Vec<OrderItemResponse>, AppError> {
+    async fn get_order_items(db: &sqlx::PgPool, order_id: &str) -> Result<Vec<OrderItemResponse>, AppError> {
         let order_uuid = Uuid::parse_str(order_id).map_err(|_| AppError::BadRequest("Invalid order ID".into()))?;
         
         let items = sqlx::query!(
@@ -104,7 +104,7 @@ impl OrdersService {
     }
 
     /// Get a single order by ID
-    pub async fn get_order(db: &DbState, id: Uuid) -> Result<OrderResponse, AppError> {
+    pub async fn get_order(state: &AppState, id: Uuid) -> Result<OrderResponse, AppError> {
         let order = sqlx::query!(
             r#"
             SELECT 
@@ -119,12 +119,12 @@ impl OrdersService {
             "#,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Order not found".into()))?;
 
         let order_id = order.id.clone().unwrap_or_default();
-        let items = Self::get_order_items(db, &order_id).await?;
+        let items = Self::get_order_items(&state.db, &order_id).await?;
 
         Ok(OrderResponse {
             id: order_id,
@@ -139,28 +139,11 @@ impl OrdersService {
 
     /// Create a new order with items
     pub async fn create_order(
-        db: &DbState,
+        state: &AppState,
         payload: CreateOrderRequest,
     ) -> Result<OrderResponse, AppError> {
         let order_id = Uuid::new_v4();
         
-        // Si no existe, crear un usuario guest
-        //  let final_user_id = if !user_exists {
-        //      let guest_id = Uuid::new_v4();
-        //      sqlx::query!(
-        //          r#"
-        //          INSERT INTO users (id, name, email, role, email_verified)
-        //          VALUES ($1, 'Guest User', 'guest@localhost', 'customer', false)
-        //          "#,
-        //          guest_id
-        //      )
-        //      .execute(db)
-        //      .await?;
-        //      guest_id
-      //  } else {
-      //      user_id
-      //  };
-
         // Calculate totals
         let subtotal: f64 = payload.items.iter().map(|i| i.unit_price * i.quantity as f64).sum();
         let taxes = subtotal * 0.21; // 21% IVA
@@ -189,7 +172,7 @@ impl OrdersService {
             taxes_bd,
             total_bd
         )
-        .fetch_one(db)
+        .fetch_one(&state.db)
         .await?;
 
         // Insert order items
@@ -215,7 +198,7 @@ impl OrdersService {
                 unit_price_bd,
                 item_subtotal_bd
             )
-            .fetch_one(db)
+            .fetch_one(&state.db)
             .await?;
 
             // Get product name
@@ -223,7 +206,7 @@ impl OrdersService {
                 "SELECT name FROM product WHERE id = $1",
                 product_id
             )
-            .fetch_optional(db)
+            .fetch_optional(&state.db)
             .await?;
 
             items.push(OrderItemResponse {
@@ -249,7 +232,7 @@ impl OrdersService {
 
     /// Update order status
     pub async fn update_order_status(
-        db: &DbState,
+        state: &AppState,
         id: Uuid,
         payload: UpdateOrderStatusRequest,
     ) -> Result<OrderResponse, AppError> {
@@ -273,12 +256,12 @@ impl OrdersService {
             payload.status,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Order not found".into()))?;
 
         let order_id = order.id.clone().unwrap_or_default();
-        let items = Self::get_order_items(db, &order_id).await?;
+        let items = Self::get_order_items(&state.db, &order_id).await?;
 
         Ok(OrderResponse {
             id: order_id,
@@ -292,9 +275,9 @@ impl OrdersService {
     }
 
     /// Delete an order
-    pub async fn delete_order(db: &DbState, id: Uuid) -> Result<(), AppError> {
+    pub async fn delete_order(state: &AppState, id: Uuid) -> Result<(), AppError> {
         let result = sqlx::query!("DELETE FROM orders WHERE id = $1", id)
-            .execute(db)
+            .execute(&state.db)
             .await?;
 
         if result.rows_affected() == 0 {

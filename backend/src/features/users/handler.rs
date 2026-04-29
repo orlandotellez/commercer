@@ -4,55 +4,55 @@ use axum::{
 };
 
 use crate::features::users::service::{ListUsersParams, UsersService};
-use crate::shared::{errors::AppError, state::DbState};
+use crate::shared::{errors::AppError, state::AppState};
 
 pub async fn list_users(
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Query(params): Query<ListUsersParams>,
 ) -> Result<Json<Vec<super::response::UserResponse>>, AppError> {
-    let users = UsersService::list_users(&db, params).await?;
+    let users = UsersService::list_users(&state, params).await?;
     Ok(Json(users))
 }
 
 pub async fn get_user(
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<super::response::UserResponse>, AppError> {
-    let user = UsersService::get_user(&db, id).await?;
+    let user = UsersService::get_user(&state, id).await?;
     Ok(Json(user))
 }
 
 pub async fn create_user(
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Json(payload): Json<super::request::CreateUserRequest>,
 ) -> Result<Json<super::response::UserResponse>, AppError> {
-    let user = UsersService::create_user(&db, payload).await?;
+    let user = UsersService::create_user(&state, payload).await?;
     Ok(Json(user))
 }
 
 pub async fn update_user(
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<super::request::UpdateUserRequest>,
 ) -> Result<Json<super::response::UserResponse>, AppError> {
-    let user = UsersService::update_user(&db, id, payload).await?;
+    let user = UsersService::update_user(&state, id, payload).await?;
     Ok(Json(user))
 }
 
 pub async fn delete_user(
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<super::response::DeleteResponse>, AppError> {
-    UsersService::delete_user(&db, id).await?;
+    UsersService::delete_user(&state, id).await?;
     Ok(Json(super::response::DeleteResponse { success: true }))
 }
 
 pub async fn change_password(
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Path(id): Path<uuid::Uuid>,
     Json(payload): Json<super::request::ChangePasswordRequest>,
 ) -> Result<Json<super::response::DeleteResponse>, AppError> {
-    UsersService::change_password(&db, id, payload).await?;
+    UsersService::change_password(&state, id, payload).await?;
     Ok(Json(super::response::DeleteResponse { success: true }))
 }
 

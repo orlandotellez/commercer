@@ -3,20 +3,20 @@ use uuid::Uuid;
 
 use crate::{
     features::auth::register::request::RegisterRequest,
-    shared::{errors::AppError, helpers::password::hash_password, state::DbState},
+    shared::{errors::AppError, helpers::password::hash_password, state::AppState},
 };
 
 pub struct RegisterService;
 
 impl RegisterService {
-    pub async fn register_user(db: &DbState, payload: RegisterRequest) -> Result<(), AppError> {
+    pub async fn register_user(state: &AppState, payload: RegisterRequest) -> Result<(), AppError> {
         let hashed_password: String = hash_password(&payload.password)?;
 
         let role = "customer";
 
         // iniciamos una transaccion para poder crear el usuario solo si se crea el account(si el
         // account falla no se crea el usuario)
-        let mut tx = db.begin().await?;
+        let mut tx = state.db.begin().await?;
 
         // crear el usuario
         let user = sqlx::query!(

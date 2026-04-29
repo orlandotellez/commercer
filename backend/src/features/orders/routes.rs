@@ -1,8 +1,8 @@
 use axum::Router;
 
-use crate::{features::orders::handler, shared::state::DbState};
+use crate::{features::orders::handler, shared::state::AppState};
 
-pub fn orders_router() -> Router<DbState> {
+pub fn orders_router() -> Router<AppState> {
     Router::new()
         .route("/", axum::routing::get(handler::list_orders))
         .route("/", axum::routing::post(handler::create_order))

@@ -5,7 +5,7 @@ use crate::{
     features::users::{
         request::ChangePasswordRequest, request::CreateUserRequest, request::UpdateUserRequest, response::UserResponse,
     },
-    shared::{errors::AppError, helpers::password::hash_password, state::DbState},
+    shared::{errors::AppError, helpers::password::hash_password, state::AppState},
 };
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -31,7 +31,7 @@ pub struct UsersService;
 
 impl UsersService {
     pub async fn list_users(
-        db: &DbState,
+        state: &AppState,
         params: ListUsersParams,
     ) -> Result<Vec<UserResponse>, AppError> {
         let page = params.page.unwrap_or(1);
@@ -55,7 +55,7 @@ impl UsersService {
             limit as i64,
             offset as i64
         )
-        .fetch_all(db)
+        .fetch_all(&state.db)
         .await?;
 
         Ok(users
@@ -73,7 +73,7 @@ impl UsersService {
             .collect())
     }
 
-    pub async fn get_user(db: &DbState, id: Uuid) -> Result<UserResponse, AppError> {
+    pub async fn get_user(state: &AppState, id: Uuid) -> Result<UserResponse, AppError> {
         let user = sqlx::query!(
             r#"
             SELECT 
@@ -89,7 +89,7 @@ impl UsersService {
             "#,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
@@ -106,7 +106,7 @@ impl UsersService {
     }
 
     pub async fn create_user(
-        db: &DbState,
+        state: &AppState,
         payload: CreateUserRequest,
     ) -> Result<UserResponse, AppError> {
         let hashed_password = hash_password(&payload.password)?;
@@ -116,7 +116,7 @@ impl UsersService {
             return Err(AppError::BadRequest("Invalid role".into()));
         }
 
-        let mut tx = db.begin().await?;
+        let mut tx = state.db.begin().await?;
 
         let user = sqlx::query!(
             r#"
@@ -178,7 +178,7 @@ impl UsersService {
     }
 
     pub async fn update_user(
-        db: &DbState,
+        state: &AppState,
         id: Uuid,
         payload: UpdateUserRequest,
     ) -> Result<UserResponse, AppError> {
@@ -188,7 +188,7 @@ impl UsersService {
             "#,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
@@ -217,7 +217,7 @@ impl UsersService {
             Utc::now(),
             id
         )
-        .fetch_one(db)
+        .fetch_one(&state.db)
         .await?;
 
         if let Some(password) = payload.password {
@@ -232,7 +232,7 @@ impl UsersService {
                 Utc::now(),
                 id
             )
-            .execute(db)
+            .execute(&state.db)
             .await?;
         }
 
@@ -251,7 +251,7 @@ impl UsersService {
     }
 
     pub async fn change_password(
-        db: &DbState,
+        state: &AppState,
         id: Uuid,
         payload: ChangePasswordRequest,
     ) -> Result<(), AppError> {
@@ -262,7 +262,7 @@ impl UsersService {
             "#,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("Account not found".into()))?;
 
@@ -288,20 +288,20 @@ impl UsersService {
             Utc::now(),
             id
         )
-        .execute(db)
+        .execute(&state.db)
         .await?;
 
         Ok(())
     }
 
-    pub async fn delete_user(db: &DbState, id: Uuid) -> Result<(), AppError> {
+    pub async fn delete_user(state: &AppState, id: Uuid) -> Result<(), AppError> {
         sqlx::query!(
             r#"
             SELECT id FROM users WHERE id = $1
             "#,
             id
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
@@ -311,7 +311,7 @@ impl UsersService {
             "#,
             id
         )
-        .execute(db)
+        .execute(&state.db)
         .await?;
 
         Ok(())

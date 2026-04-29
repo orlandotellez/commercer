@@ -4,14 +4,14 @@ use crate::{
     features::auth::register::{
         request::RegisterRequest, response::RegisterResponse, service::RegisterService,
     },
-    shared::{errors::AppError, state::DbState},
+    shared::{errors::AppError, state::AppState},
 };
 
 pub async fn register_user(
-    State(db): State<DbState>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<Json<RegisterResponse>, AppError> {
-    RegisterService::register_user(&db, payload).await?;
+    RegisterService::register_user(&state, payload).await?;
 
     let response: RegisterResponse = RegisterResponse {
         message: "Usuario registrado exitosamente".to_string(),

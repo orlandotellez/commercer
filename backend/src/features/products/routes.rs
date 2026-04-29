@@ -1,8 +1,8 @@
 use axum::Router;
 
-use crate::{features::products::handler, shared::state::DbState};
+use crate::{features::products::handler, shared::state::AppState};
 
-pub fn routes() -> Router<DbState> {
+pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/", axum::routing::get(handler::list_products))
         .route("/", axum::routing::post(handler::create_product))

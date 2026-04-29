@@ -7,7 +7,7 @@ use crate::{
     shared::{
         errors::AppError,
         helpers::{jwt::encode_jwt, password::verify_password},
-        state::DbState,
+        state::AppState,
     },
 };
 
@@ -28,7 +28,7 @@ pub struct LoginResult {
 pub struct LoginService;
 
 impl LoginService {
-    pub async fn login_user(db: &DbState, payload: LoginRequest) -> Result<LoginResult, AppError> {
+    pub async fn login_user(state: &AppState, payload: LoginRequest) -> Result<LoginResult, AppError> {
         // Query simple sin role para evitar errores
         let record = sqlx::query!(
             r#"
@@ -46,7 +46,7 @@ impl LoginService {
             "#,
             payload.email
         )
-        .fetch_optional(db)
+        .fetch_optional(&state.db)
         .await?;
 
         let record = match record {
@@ -89,7 +89,7 @@ impl LoginService {
             Utc::now(),
             record.id
         )
-        .execute(db)
+        .execute(&state.db)
         .await?;
 
         let response: LoginResult = LoginResult {

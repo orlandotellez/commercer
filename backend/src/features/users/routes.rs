@@ -1,8 +1,8 @@
 use axum::Router;
 
-use crate::{features::users::handler, shared::state::DbState};
+use crate::{features::users::handler, shared::state::AppState};
 
-pub fn routes() -> Router<DbState> {
+pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/", axum::routing::get(handler::list_users))
         .route("/", axum::routing::post(handler::create_user))
