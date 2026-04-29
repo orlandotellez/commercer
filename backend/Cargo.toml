@@ -12,15 +12,7 @@ tower-http = { version = "0.6.6", features = ["cors"] }
 tokio = { version = "1", features = ["full"] }
 
 # Base de datos
-sqlx = { version = "0.8.6", features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "chrono",
-    "uuid",
-    "migrate",
-    "macros",
-    "bigdecimal"
-] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid", "migrate", "macros", "bigdecimal"] }
 
 # Cache Redis
 redis = { version = "0.27", features = ["aio", "tokio-comp", "json"] }
@@ -47,3 +39,8 @@ validator = { version = "0.19", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 bigdecimal = { version = "0.4.10", features = ["serde"] }
+sqlx-cli = "0.8.6"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+reqwest = { version = "0.12", features = ["json"] }
