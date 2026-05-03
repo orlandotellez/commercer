@@ -138,3 +138,21 @@ export interface ChangePasswordPayload {
   new_password: string;
 }
 
+export type ProductStatus = "active" | "inactive";
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  categoryId?: string;
+  stock: number;
+  price: number;
+  originalPrice?: number;
+  status: ProductStatus;
+  image?: string;
+  brand?: string;
+  specs?: Record<string, string>;
+  description?: string;
+  featured: boolean;
+}

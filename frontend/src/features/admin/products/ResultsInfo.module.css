@@ -1,0 +1,14 @@
+.resultsInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.resultsCount {
+  color: #6B7280;
+}
+
+.resultsPage {
+  color: #6B7280;
+}
