@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import {
-  Search,
-  Filter,
-  Plus,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import styles from "./page.module.css";
 import { EditUserModal } from "@/features/admin/users/modals/EditUserModal";
 import { ViewUserModal } from "@/features/admin/users/modals/ViewUserModal";
@@ -15,6 +9,8 @@ import { CreateUserModal } from "@/features/admin/users/modals/CreateUserModal";
 import { Pagination } from "@/features/admin/users/Pagination";
 import { User } from "@/shared/types";
 import { UsersTable } from "@/features/admin/users/UsersTable";
+import { Header } from "@/features/admin/users/Header";
+import { Filters } from "@/features/admin/users/Filters";
 
 // API
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
@@ -145,74 +141,20 @@ export default function UsersPage() {
   return (
     <div className={styles.container}>
       {/* Page Header */}
-      <div className={styles.pageHeader}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Usuarios</h1>
-          <p className={styles.pageSubtitle}>
-            Gestiona los usuarios del sistema
-          </p>
-        </div>
-        <div className={styles.headerRight}>
-          <button className={styles.addButton} onClick={() => setShowModal(true)}>
-            <Plus className={styles.addIcon} />
-            Nuevo Usuario
-          </button>
-        </div>
-      </div>
+      <Header setShowModal={setShowModal} />
 
       {/* Filters Section */}
-      <div className={styles.filtersSection}>
-        <div className={styles.searchWrapper}>
-          <Search className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o email..."
-            className={styles.searchInput}
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-
-        <button
-          className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ""}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter className={styles.filterIcon} />
-          Filtros
-          {activeFiltersCount > 0 && (
-            <span className={styles.filterBadge}>{activeFiltersCount}</span>
-          )}
-        </button>
-      </div>
-
-      {/* Advanced Filters */}
-      {showFilters && (
-        <div className={styles.advancedFilters}>
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Rol</label>
-            <select
-              className={styles.filterSelect}
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Todos los roles</option>
-              <option value="admin">Administrador</option>
-              <option value="staff">Personal</option>
-              <option value="customer">Cliente</option>
-            </select>
-          </div>
-
-          <button className={styles.clearFilters} onClick={clearFilters}>
-            Limpiar filtros
-          </button>
-        </div>
-      )}
+      <Filters
+        searchTerm={searchTerm}
+        setSearchTerm={(e) => setSearchTerm(e.target.value)}
+        setCurrentPage={setCurrentPage}
+        showFilters={showFilters}
+        setShowFilters={setShowFilters}
+        activeFiltersCount={activeFiltersCount}
+        roleFilter={roleFilter}
+        setRoleFilter={(e) => setRoleFilter(e.target.value)}
+        clearFilters={clearFilters}
+      />
 
       {/* Results Info */}
       <div className={styles.resultsInfo}>
