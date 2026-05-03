@@ -58,9 +58,12 @@ export interface Supplier {
 
 export interface User {
   id: string;
-  email: string;
   name: string;
-  role: 'admin' | 'customer';
+  email: string;
+  role: 'admin' | 'customer' | 'staff';
+  email_verified: boolean;
+  phone?: string;
+  created_at: string;
 }
 
 export interface Address {

@@ -119,13 +119,6 @@ const recentOrders = [
     status: "pending",
     date: "2026-04-04",
   },
-  {
-    id: "ORD-7825",
-    customer: "Pedro Sánchez",
-    total: "$1,599.00",
-    status: "completed",
-    date: "2026-04-03",
-  },
 ];
 
 const inventoryAlerts = [

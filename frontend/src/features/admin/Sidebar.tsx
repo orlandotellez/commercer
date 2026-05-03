@@ -18,7 +18,7 @@ export const SideBar = () => {
 
 
   const { collapsed, setCollapsed } = useSideBarStore();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -78,14 +78,8 @@ export const SideBar = () => {
 
       {/* Logout Button */}
       <div className={styles.logoutContainer}>
-        {!collapsed && user && (
-          <div className={styles.userInfo}>
-            <span className={styles.userName}>{user.name}</span>
-            <span className={styles.userRole}>{user.role}</span>
-          </div>
-        )}
-        <button 
-          onClick={logout} 
+        <button
+          onClick={logout}
           className={`${styles.navItem} ${styles.logoutButton}`}
           title="Cerrar sesión"
         >
