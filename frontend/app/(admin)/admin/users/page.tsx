@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
 import styles from "./page.module.css";
 import { EditUserModal } from "@/features/admin/users/modals/EditUserModal";
 import { ViewUserModal } from "@/features/admin/users/modals/ViewUserModal";
@@ -11,6 +10,8 @@ import { User } from "@/shared/types";
 import { UsersTable } from "@/features/admin/users/UsersTable";
 import { Header } from "@/features/admin/users/Header";
 import { Filters } from "@/features/admin/users/Filters";
+import { ErrorState } from "@/shared/components/ErrorState";
+import { LoadingState } from "@/shared/components/LoadingState";
 
 // API
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
@@ -169,20 +170,10 @@ export default function UsersPage() {
       </div>
 
       {/* Error State */}
-      {error && (
-        <div className={styles.errorBanner}>
-          <AlertCircle className={styles.errorBannerIcon} />
-          {error}
-        </div>
-      )}
+      {error && <ErrorState error={error} />}
 
       {/* Loading State */}
-      {isLoading ? (
-        <div className={styles.loadingState}>
-          <Loader2 className={styles.loadingSpinner} />
-          <span>Cargando usuarios...</span>
-        </div>
-      ) : (
+      {isLoading ? <LoadingState title="Cargando usuarios..." /> : (
         /* Users Table */
         <UsersTable
           filteredUsers={filteredUsers}
