@@ -1,141 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Edit,
-  Trash2,
-  Download,
-  Calendar,
-  Loader2,
-  AlertCircle,
-  X,
-} from "lucide-react";
+import { useState } from "react";
 import styles from "./page.module.css";
-import {
-  listOrders,
-} from "@/shared/lib/api";
-import { OrderResponse } from "@/shared/types";
-
-// Tipos para la UI
-type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
-
-interface OrderItem {
-  id: string;
-  product_id: string;
-  product_name?: string;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-}
-
-interface Order {
-  id: string;
-  customer: string;
-  email: string;
-  total: number;
-  status: OrderStatus;
-  date: string;
-  items: number;
-  user_id: string;
-  subtotal?: number;
-  taxes?: number;
-  created_at?: string;
-  order_items?: OrderItem[];
-}
-
-// Mapear respuesta de API a formato de UI
-function mapApiOrderToUi(apiOrder: OrderResponse): Order {
-  return {
-    id: apiOrder.id,
-    customer: apiOrder.user_id, // Por ahora mostrar user_id como cliente
-    email: "", // El backend no devuelve email del usuario todavía
-    total: apiOrder.total,
-    status: apiOrder.status as OrderStatus,
-    date: apiOrder.created_at?.split("T")[0] || "",
-    items: apiOrder.items.length,
-    user_id: apiOrder.user_id,
-  };
-}
-
-// Componente de paginación
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}
-
-const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("...");
-        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
-
-  return (
-    <div className={styles.pagination}>
-      <button
-        className={styles.paginationButton}
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        <ChevronLeft className={styles.paginationIcon} />
-        Anterior
-      </button>
-
-      <div className={styles.paginationNumbers}>
-        {getPageNumbers().map((page, index) => (
-          <span key={index}>
-            {page === "..." ? (
-              <span className={styles.paginationEllipsis}>...</span>
-            ) : (
-              <button
-                className={`${styles.paginationNumber} ${page === currentPage ? styles.paginationNumberActive : ""}`}
-                onClick={() => onPageChange(page as number)}
-              >
-                {page}
-              </button>
-            )}
-          </span>
-        ))}
-      </div>
-
-      <button
-        className={styles.paginationButton}
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-      >
-        Siguiente
-        <ChevronRight className={styles.paginationIcon} />
-      </button>
-    </div>
-  );
-};
+import { Order, OrderStatus } from "@/shared/types";
+import { Pagination } from "@/features/admin/orders/Pagination";
+import { ViewOrderModal } from "@/features/admin/orders/modals/ViewOrderModal";
+import { OrdersTable } from "@/features/admin/orders/OrdersTable";
+import { Filters } from "@/features/admin/orders/Filters";
+import { Header } from "@/features/admin/orders/Header";
+import { ResultsInfo } from "@/features/admin/orders/ResultsInfo";
+import { LoadingState } from "@/shared/components/LoadingState";
+import { ErrorState } from "@/shared/components/ErrorState";
+import { useOrders } from "@/shared/hooks/useOrders";
 
 const statusLabels: Record<OrderStatus, string> = {
   pending: "Pendiente",
@@ -153,399 +29,68 @@ const statusClassMap: Record<OrderStatus, string> = {
   cancelled: styles.orderStatusCancelled,
 };
 
-// Modal de ver pedido
-const ViewOrderModal: React.FC<{
-  order: Order | null;
-  isOpen: boolean;
-  onClose: () => void;
-}> = ({ order, isOpen, onClose }) => {
-  if (!isOpen || !order) return null;
-
-  return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>Detalle del Pedido</h2>
-          <button className={styles.modalClose} onClick={onClose}>
-            <X className={styles.modalCloseIcon} />
-          </button>
-        </div>
-        <div className={styles.modalBody}>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>ID</span>
-            <span className={styles.detailValue}>{order.id}</span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>Cliente</span>
-            <span className={styles.detailValue}>{order.customer}</span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>Fecha</span>
-            <span className={styles.detailValue}>
-              {order.date ? new Date(order.date).toLocaleDateString("es-AR") : "N/A"}
-            </span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>Estado</span>
-            <span className={`${styles.orderStatus} ${statusClassMap[order.status]}`}>
-              {statusLabels[order.status]}
-            </span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>Items</span>
-            <span className={styles.detailValue}>{order.items} productos</span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>Subtotal</span>
-            <span className={styles.detailValue}>
-              ${(order.subtotal || order.total / 1.21).toFixed(2)}
-            </span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>IVA</span>
-            <span className={styles.detailValue}>
-              ${(order.taxes || order.total - (order.total / 1.21)).toFixed(2)}
-            </span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>Total</span>
-            <span className={styles.detailValue}>${order.total.toFixed(2)}</span>
-          </div>
-        </div>
-        <div className={styles.modalActions}>
-          <button className={styles.modalCancel} onClick={onClose}>
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ITEMS_PER_PAGE = 10;
-
 export default function OrdersPage() {
-  const [mounted, setMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  // Estados de la API
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Cargar pedidos desde la API
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params: any = {
-        page: currentPage,
-        limit: ITEMS_PER_PAGE,
-      };
-
-      if (statusFilter !== "all") {
-        params.status = statusFilter;
-      }
-
-      if (dateFrom) {
-        params.date_from = dateFrom;
-      }
-
-      if (dateTo) {
-        params.date_to = dateTo;
-      }
-
-      const response = await listOrders(params);
-
-      const mappedOrders = response.orders.map(mapApiOrderToUi);
-
-      // Filtrar por search term del lado del cliente
-      let filtered = mappedOrders;
-      if (searchTerm) {
-        filtered = mappedOrders.filter(
-          (order) =>
-            order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.customer.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-
-      setOrders(filtered);
-      setTotal(response.total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar pedidos");
-      console.error("Error fetching orders:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, statusFilter, dateFrom, dateTo, searchTerm]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      fetchOrders();
-    }
-  }, [mounted, fetchOrders]);
-
-  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const {
+    orders, loading, error, totalPages,
+    currentPage, setCurrentPage,
+    searchTerm, setSearchTerm,
+    statusFilter, setStatusFilter,
+    dateFrom, setDateFrom,
+    dateTo, setDateTo,
+    activeFiltersCount,
+    clearFilters,
+    fetchOrders,
+  } = useOrders()
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("all");
-    setDateFrom("");
-    setDateTo("");
-    setCurrentPage(1);
-    fetchOrders();
-  };
-
-  const activeFiltersCount = [
-    statusFilter !== "all",
-    dateFrom,
-    dateTo,
-  ].filter(Boolean).length;
-
-  // Refrescar cuando cambian los filtros
-  useEffect(() => {
-    if (mounted && !loading) {
-      const timeoutId = setTimeout(() => {
-        fetchOrders();
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [statusFilter, dateFrom, dateTo]);
-
-  if (!mounted) return null;
-
   return (
     <div className={styles.container}>
       {/* Page Header */}
-      <div className={styles.pageHeader}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Pedidos</h1>
-          <p className={styles.pageSubtitle}>
-            Gestiona todos los pedidos de tu tienda
-          </p>
-        </div>
-        <div className={styles.headerRight}>
-          <button className={styles.exportButton}>
-            <Download className={styles.exportIcon} />
-            Exportar
-          </button>
-        </div>
-      </div>
+      <Header />
 
       {/* Filters Section */}
-      <div className={styles.filtersSection}>
-        <div className={styles.searchWrapper}>
-          <Search className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Buscar por ID, cliente o email..."
-            className={styles.searchInput}
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-
-        <button
-          className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ""}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter className={styles.filterIcon} />
-          Filtros
-          {activeFiltersCount > 0 && (
-            <span className={styles.filterBadge}>{activeFiltersCount}</span>
-          )}
-        </button>
-      </div>
-
-      {/* Advanced Filters */}
-      {showFilters && (
-        <div className={styles.advancedFilters}>
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Estado</label>
-            <select
-              className={styles.filterSelect}
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as OrderStatus | "all");
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Todos los estados</option>
-              <option value="pending">Pendiente</option>
-              <option value="processing">Procesando</option>
-              <option value="shipped">Enviado</option>
-              <option value="completed">Completado</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
-          </div>
-
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Desde</label>
-            <div className={styles.dateInputWrapper}>
-              <Calendar className={styles.dateIcon} />
-              <input
-                type="date"
-                className={styles.filterInput}
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-          </div>
-
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Hasta</label>
-            <div className={styles.dateInputWrapper}>
-              <Calendar className={styles.dateIcon} />
-              <input
-                type="date"
-                className={styles.filterInput}
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-          </div>
-
-          <button className={styles.clearFilters} onClick={clearFilters}>
-            Limpiar filtros
-          </button>
-        </div>
-      )}
+      <Filters
+        searchTerm={searchTerm}
+        setSearchTerm={(e) => setSearchTerm(e.target.value)}
+        setCurrentPage={setCurrentPage}
+        showFilters={showFilters}
+        setShowFilters={setShowFilters}
+        activeFiltersCount={activeFiltersCount}
+        statusFilter={statusFilter}
+        setStatusFilter={(e) => setStatusFilter(e.target.value as OrderStatus | "all")}
+        dateFrom={dateFrom}
+        setDateFrom={(e) => setDateFrom(e.target.value)}
+        dateTo={dateTo}
+        setDateTo={(e) => setDateTo(e.target.value)}
+        clearFilters={clearFilters}
+      />
 
       {/* Error State */}
-      {error && (
-        <div className={styles.errorState}>
-          <AlertCircle className={styles.errorIcon} />
-          <span>{error}</span>
-          <button onClick={fetchOrders} className={styles.retryButton}>
-            Reintentar
-          </button>
-        </div>
-      )}
+      {error && <ErrorState error={error} fetch={() => fetchOrders} />}
 
       {/* Loading State */}
-      {loading && (
-        <div className={styles.loadingState}>
-          <Loader2 className={styles.loadingSpinner} />
-          <span>Cargando pedidos...</span>
-        </div>
-      )}
+      {loading && <LoadingState title="Cargando pedidos..." />}
 
       {/* Results Info */}
-      {!loading && !error && (
-        <div className={styles.resultsInfo}>
-          <span className={styles.resultsCount}>
-            {orders.length} pedidos encontrados
-          </span>
-          {totalPages > 1 && (
-            <span className={styles.resultsPage}>
-              Página {currentPage} de {totalPages}
-            </span>
-          )}
-        </div>
-      )}
+      {!loading && !error && <ResultsInfo orders={orders.length} totalPages={totalPages} currentPage={currentPage} />}
 
       {/* Orders Table */}
-      {!loading && !error && (
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr className={styles.tableHead}>
-                <th className={styles.tableHeadCell}>ID</th>
-                <th className={styles.tableHeadCell}>Cliente</th>
-                <th className={styles.tableHeadCell}>Fecha</th>
-                <th className={styles.tableHeadCell}>Items</th>
-                <th className={`${styles.tableHeadCell} ${styles.tableHeadCellRight}`}>Total</th>
-                <th className={styles.tableHeadCell}>Estado</th>
-                <th className={styles.tableHeadCell}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className={styles.emptyState}>
-                    No se encontraron pedidos
-                  </td>
-                </tr>
-              ) : (
-                orders.map((order) => (
-                  <tr key={order.id} className={styles.tableRow}>
-                    <td className={styles.tableCell}>
-                      <span className={styles.orderId}>{order.id}</span>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.customerInfo}>
-                        <span className={styles.customerName}>{order.customer}</span>
-                        <span className={styles.customerEmail}>{order.email}</span>
-                      </div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <span className={styles.orderDate}>
-                        {new Date(order.date).toLocaleDateString("es-AR")}
-                      </span>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <span className={styles.orderItems}>{order.items}</span>
-                    </td>
-                    <td className={`${styles.tableCell} ${styles.tableCellRight}`}>
-                      <span className={styles.orderTotal}>
-                        ${order.total.toLocaleString("es-AR")}
-                      </span>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <span className={`${styles.orderStatus} ${statusClassMap[order.status]}`}>
-                        {statusLabels[order.status]}
-                      </span>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.actions}>
-                        <button 
-                          className={styles.actionButton} 
-                          title="Ver detalles"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowViewModal(true);
-                          }}
-                        >
-                          <Eye className={styles.actionIcon} />
-                        </button>
-                        <button className={`${styles.actionButton} ${styles.actionButtonDanger}`} title="Eliminar">
-                          <Trash2 className={styles.actionIcon} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {!loading && !error &&
+        <OrdersTable
+          orders={orders}
+          statusClassMap={statusClassMap}
+          statusLabels={statusLabels}
+          setSelectedOrder={setSelectedOrder}
+          setShowViewModal={setShowViewModal}
+        />
+      }
 
       {/* Pagination */}
       {!loading && !error && totalPages > 1 && (
@@ -564,6 +109,8 @@ export default function OrdersPage() {
           setShowViewModal(false);
           setSelectedOrder(null);
         }}
+        statusClassMap={statusClassMap}
+        statusLabels={statusLabels}
       />
     </div>
   );

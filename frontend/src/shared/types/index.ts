@@ -29,22 +29,31 @@ export interface Category {
   count: number;
 }
 
+
+export type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
+
 export interface OrderItem {
-  productId: string;
-  name: string;
+  id: string;
+  product_id: string;
+  product_name?: string;
   quantity: number;
-  price: number;
+  unit_price: number;
+  subtotal: number;
 }
 
 export interface Order {
   id: string;
-  date: string;
   customer: string;
   email: string;
-  items: OrderItem[];
   total: number;
-  status: 'pendiente' | 'pagado' | 'enviado' | 'entregado';
-  paymentMethod: string;
+  status: OrderStatus;
+  date: string;
+  items: number;
+  user_id: string;
+  subtotal?: number;
+  taxes?: number;
+  created_at?: string;
+  order_items?: OrderItem[];
 }
 
 export interface Supplier {
@@ -156,3 +165,6 @@ export interface AdminProduct {
   description?: string;
   featured: boolean;
 }
+
+
+

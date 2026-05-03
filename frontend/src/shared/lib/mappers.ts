@@ -1,4 +1,4 @@
-import { AdminProduct } from "../types";
+import { AdminProduct, Order, OrderResponse, OrderStatus } from "../types";
 
 export function mapToAdminProduct(p: any): AdminProduct {
   return {
@@ -28,4 +28,18 @@ export const categoryMap: Record<string, string> = {
   "Periféricos": "peripherals",
   "Accesorios PC": "accessories",
 };
+
+// Mapear respuesta de API a formato de UI
+export function mapApiOrderToUi(apiOrder: OrderResponse): Order {
+  return {
+    id: apiOrder.id,
+    customer: apiOrder.user_id, // Por ahora mostrar user_id como cliente
+    email: "", // El backend no devuelve email del usuario todavía
+    total: apiOrder.total,
+    status: apiOrder.status as OrderStatus,
+    date: apiOrder.created_at?.split("T")[0] || "",
+    items: apiOrder.items.length,
+    user_id: apiOrder.user_id,
+  };
+}
 

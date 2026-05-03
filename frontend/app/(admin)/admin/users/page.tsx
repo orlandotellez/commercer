@@ -94,7 +94,7 @@ export default function UsersPage() {
       />
 
       {/* Error State */}
-      {error && <ErrorState error={error} />}
+      {error && <ErrorState error={error} fetch={() => fetchUsers(currentPage, searchTerm, roleFilter)} />}
 
       {/* Loading State */}
       {isLoading ? <LoadingState title="Cargando usuarios..." /> : (
