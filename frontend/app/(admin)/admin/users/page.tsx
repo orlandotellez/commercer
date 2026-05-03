@@ -12,21 +12,13 @@ import { Header } from "@/features/admin/users/Header";
 import { Filters } from "@/features/admin/users/Filters";
 import { ErrorState } from "@/shared/components/ErrorState";
 import { LoadingState } from "@/shared/components/LoadingState";
-
-// API
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
-
-const getToken = (): string | null => {
-  return localStorage.getItem("access_token");
-};
+import { useUsers } from "@/shared/hooks/useUsers";
+import { ResultsInfo } from "@/features/admin/users/ResultsInfo";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function UsersPage() {
   const [mounted, setMounted] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -35,84 +27,20 @@ export default function UsersPage() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
 
-  // El layout ya verifica la sesión - solo necesitamos cargar datos
+  const { users, isLoading, error, totalCount, fetchUsers, deleteUser } = useUsers();
+
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    fetchUsers(currentPage, searchTerm, roleFilter);
+  }, [currentPage, roleFilter]);
 
-  const fetchUsers = async (page: number = 1) => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setError("No hay sesión iniciada");
-        return;
-      }
-
-      const params = new URLSearchParams();
-      params.append("page", page.toString());
-      params.append("limit", ITEMS_PER_PAGE.toString());
-      if (searchTerm) params.append("search", searchTerm);
-      if (roleFilter !== "all") params.append("role", roleFilter);
-
-      const res = await fetch(`${API_URL}/users?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const text = await res.text();
-
-      if (!res.ok) {
-        throw new Error(`Error ${res.status}: ${text}`);
-      }
-
-      const data = JSON.parse(text);
-      setUsers(data);
-      setTotalCount(data.length);
-    } catch (err: any) {
-      console.error("Fetch error:", err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
-
-    try {
-      const token = getToken();
-      const res = await fetch(`${API_URL}/users/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Error al eliminar usuario");
-      }
-
-      fetchUsers(currentPage);
-    } catch (err: any) {
-      alert(err.message);
-    }
+  const handleDelete = (id: string) => {
+    deleteUser(id, () => fetchUsers(currentPage, searchTerm, roleFilter));
   };
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      fetchUsers(currentPage);
-    }
-  }, [mounted, currentPage, roleFilter]);
 
   const filteredUsers = useMemo(() => {
     if (!searchTerm) return users;
@@ -158,16 +86,12 @@ export default function UsersPage() {
       />
 
       {/* Results Info */}
-      <div className={styles.resultsInfo}>
-        <span className={styles.resultsCount}>
-          {totalCount} usuarios encontrados
-        </span>
-        {activeFiltersCount > 0 && (
-          <span className={styles.resultsPage}>
-            Página {currentPage} de {totalPages}
-          </span>
-        )}
-      </div>
+      <ResultsInfo
+        totalCount={totalCount}
+        totalPages={totalPages}
+        activeFiltersCount={activeFiltersCount}
+        currentPage={currentPage}
+      />
 
       {/* Error State */}
       {error && <ErrorState error={error} />}
@@ -198,7 +122,7 @@ export default function UsersPage() {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSuccess={() => {
-          fetchUsers(currentPage);
+          fetchUsers(currentPage, searchTerm, roleFilter);
           setShowModal(false);
         }}
       />
@@ -222,7 +146,7 @@ export default function UsersPage() {
           setSelectedUser(null);
         }}
         onSuccess={() => {
-          fetchUsers(currentPage);
+          fetchUsers(currentPage, searchTerm, roleFilter);
         }}
       />
     </div>
