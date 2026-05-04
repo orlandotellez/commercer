@@ -4,7 +4,10 @@ use axum::{
 };
 
 use crate::{
-    features::dashboard::{response::DashboardResponse, service::DashboardService},
+    features::dashboard::{
+        response::{DashboardResponse, SalesDataPoint},
+        service::DashboardService,
+    },
     shared::{errors::AppError, state::AppState},
 };
 
@@ -43,4 +46,20 @@ pub async fn get_dashboard(
     };
 
     Ok(Json(response))
+}
+
+pub async fn get_dashboard_chart(
+    State(state): State<AppState>,
+    Query(params): Query<DashboardQuery>,
+) -> Result<Json<Vec<SalesDataPoint>>, AppError> {
+    // Validate and default period parameter
+    let period = params.period.unwrap_or_else(|| "month".to_string());
+    if !["day", "week", "month"].contains(&period.as_str()) {
+        return Err(AppError::BadRequest(
+            "Invalid period. Use: day, week, month".to_string(),
+        ));
+    }
+
+    let chart_data = DashboardService::get_sales_by_period(&state, &period).await?;
+    Ok(Json(chart_data))
 }
