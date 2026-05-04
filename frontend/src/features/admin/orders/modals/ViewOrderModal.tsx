@@ -1,5 +1,7 @@
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import styles from "./ViewOrderModal.module.css"
+import { useState, useEffect } from "react";
+import { updateOrderStatus } from "@/shared/lib/api";
 
 // Tipos para la UI
 type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
@@ -34,6 +36,8 @@ interface ViewOrderModalProps {
   onClose: () => void;
   statusLabels: Record<OrderStatus, string>;
   statusClassMap: Record<OrderStatus, string>;
+  onStatusUpdate?: () => void;
+  onOrderUpdated?: (updatedOrder: any) => void;
 }
 
 export const ViewOrderModal = ({ 
@@ -41,8 +45,44 @@ export const ViewOrderModal = ({
   isOpen, 
   onClose, 
   statusLabels, 
-  statusClassMap 
+  statusClassMap,
+  onStatusUpdate,
+  onOrderUpdated
 }: ViewOrderModalProps) => {
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(order?.status || "pending");
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+
+  // Reset selected status when order changes (including status updates)
+  useEffect(() => {
+    if (order) {
+      setSelectedStatus(order.status);
+    }
+  }, [order]); // Reset when order object changes (new reference)
+
+  const handleStatusUpdate = async () => {
+    if (!order || selectedStatus === order.status) return;
+    
+    setUpdating(true);
+    setUpdateError(null);
+    
+    try {
+      const updatedOrder = await updateOrderStatus(order.id, { status: selectedStatus });
+      // Notify parent to refresh list
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
+      // Update the selected order in parent with fresh data from backend
+      if (onOrderUpdated) {
+        onOrderUpdated(updatedOrder);
+      }
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : 'Error al actualizar estado');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (!isOpen || !order) return null;
 
   return (
@@ -94,6 +134,42 @@ export const ViewOrderModal = ({
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>Total</span>
             <span className={styles.detailValue}>${order.total.toFixed(2)}</span>
+          </div>
+
+          {/* Cambiar estado */}
+          <div className={styles.statusChangeSection}>
+            <h3 className={styles.statusChangeTitle}>Cambiar Estado</h3>
+            <div className={styles.statusChangeControls}>
+              <select 
+                className={styles.statusSelect}
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+                disabled={updating}
+              >
+                <option value="pending">Pendiente</option>
+                <option value="processing">Procesando</option>
+                <option value="shipped">Enviado</option>
+                <option value="completed">Completado</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+              <button 
+                className={styles.statusUpdateButton}
+                onClick={handleStatusUpdate}
+                disabled={updating || selectedStatus === order.status}
+              >
+                {updating ? (
+                  <>
+                    <Loader2 className={styles.spinner} />
+                    Actualizando...
+                  </>
+                ) : (
+                  'Actualizar'
+                )}
+              </button>
+            </div>
+            {updateError && (
+              <div className={styles.statusError}>{updateError}</div>
+            )}
           </div>
 
           {/* Productos del pedido */}

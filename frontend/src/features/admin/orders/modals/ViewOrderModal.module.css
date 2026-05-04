@@ -148,3 +148,87 @@
 .productsTable tr:last-child td {
   border-bottom: none;
 }
+
+.statusChangeSection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.statusChangeTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 1rem;
+}
+
+.statusChangeControls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.statusSelect {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #000000;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.statusSelect:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.statusUpdateButton {
+  padding: 0.5rem 1.25rem;
+  background-color: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statusUpdateButton:hover:not(:disabled) {
+  background-color: #1f2937;
+}
+
+.statusUpdateButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.statusError {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #dc2626;
+  font-size: 0.875rem;
+}

@@ -101,17 +101,30 @@ export default function OrdersPage() {
         />
       )}
 
-      {/* View Order Modal */}
-      <ViewOrderModal
-        order={selectedOrder}
-        isOpen={showViewModal}
-        onClose={() => {
-          setShowViewModal(false);
-          setSelectedOrder(null);
-        }}
-        statusClassMap={statusClassMap}
-        statusLabels={statusLabels}
-      />
+       {/* View Order Modal */}
+       <ViewOrderModal
+         order={selectedOrder}
+         isOpen={showViewModal}
+         onClose={() => {
+           setShowViewModal(false);
+           setSelectedOrder(null);
+         }}
+         statusClassMap={statusClassMap}
+         statusLabels={statusLabels}
+         onStatusUpdate={() => {
+           fetchOrders({ page: currentPage });
+         }}
+         onOrderUpdated={(updatedOrder) => {
+           // Map the API response to UI format and update selected order
+           if (updatedOrder && selectedOrder) {
+             const mappedOrder = {
+               ...selectedOrder,
+               status: updatedOrder.status || selectedOrder.status,
+             };
+             setSelectedOrder(mappedOrder);
+           }
+         }}
+       />
     </div>
   );
 }
