@@ -11,130 +11,24 @@ import {
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
+import { getDashboard } from "@/shared/lib/api";
+import { DashboardResponse } from "@/shared/types";
 import styles from "./page.module.css";
 
-type TimeFilter = "day" | "week" | "month";
-
-// Datos por período
-const generateSalesData = (filter: TimeFilter) => {
-  switch (filter) {
-    case "day":
-      return [
-        { label: "Lun", value: 12450 },
-        { label: "Mar", value: 15200 },
-        { label: "Mié", value: 11800 },
-        { label: "Jue", value: 18900 },
-        { label: "Vie", value: 22100 },
-        { label: "Sáb", value: 28500 },
-        { label: "Dom", value: 19200 },
-      ];
-    case "week":
-      return [
-        { label: "Sem 1", value: 89500 },
-        { label: "Sem 2", value: 78200 },
-        { label: "Sem 3", value: 93400 },
-        { label: "Sem 4", value: 110800 },
-      ];
-    case "month":
-    default:
-      return [
-        { label: "Ene", value: 45000 },
-        { label: "Feb", value: 52000 },
-        { label: "Mar", value: 48000 },
-        { label: "Abr", value: 61000 },
-        { label: "May", value: 55000 },
-        { label: "Jun", value: 67000 },
-        { label: "Jul", value: 72000 },
-        { label: "Ago", value: 69000 },
-        { label: "Sep", value: 81000 },
-        { label: "Oct", value: 78000 },
-        { label: "Nov", value: 95000 },
-        { label: "Dic", value: 110000 },
-      ];
-  }
+// Icon mapping for KPIs
+const kpiIconMap: Record<string, React.ComponentType<any>> = {
+  "Ventas Totales": DollarSign,
+  "Pedidos": ShoppingCart,
+  "Usuarios": Users,
+  "Productos": Package,
 };
 
-// Datos de prueba
-const kpiData = [
-  {
-    title: "Ventas Totales",
-    value: "$124,589",
-    change: "+12.5%",
-    trend: "up",
-    icon: DollarSign,
-    color: "#10B981",
-  },
-  {
-    title: "Pedidos",
-    value: "1,247",
-    change: "+8.2%",
-    trend: "up",
-    icon: ShoppingCart,
-    color: "#3B82F6",
-  },
-  {
-    title: "Usuarios",
-    value: "8,934",
-    change: "+15.3%",
-    trend: "up",
-    icon: Users,
-    color: "#F38020",
-  },
-  {
-    title: "Productos",
-    value: "342",
-    change: "-2.1%",
-    trend: "down",
-    icon: Package,
-    color: "#EF4444",
-  },
-];
-
-const recentOrders = [
-  {
-    id: "ORD-7829",
-    customer: "Juan Pérez",
-    total: "$1,299.00",
-    status: "completed",
-    date: "2026-04-05",
-  },
-  {
-    id: "ORD-7828",
-    customer: "María García",
-    total: "$849.50",
-    status: "processing",
-    date: "2026-04-05",
-  },
-  {
-    id: "ORD-7827",
-    customer: "Carlos López",
-    total: "$2,199.00",
-    status: "shipped",
-    date: "2026-04-04",
-  },
-  {
-    id: "ORD-7826",
-    customer: "Ana Martínez",
-    total: "$459.99",
-    status: "pending",
-    date: "2026-04-04",
-  },
-];
-
-const inventoryAlerts = [
-  { product: "NVIDIA RTX 5080", stock: 3, threshold: 10, urgent: true },
-  { product: "AMD Ryzen 9 9950X", stock: 5, threshold: 10, urgent: true },
-  { product: "Corsair Vengeance 32GB", stock: 8, threshold: 15, urgent: false },
-  { product: "Samsung 990 Pro 2TB", stock: 12, threshold: 20, urgent: false },
-];
-
-const topProducts = [
-  { name: "NVIDIA RTX 5090", sales: 89, revenue: "$124,789" },
-  { name: "AMD Ryzen 9 9950X", sales: 67, revenue: "$66,133" },
-  { name: "Corsair Dominator 64GB", sales: 54, revenue: "$32,400" },
-  { name: "Samsung 990 Pro 2TB", sales: 48, revenue: "$47,520" },
-  { name: "ASUS ROG Maximus", sales: 41, revenue: "$28,085" },
-];
+const kpiColorMap: Record<string, string> = {
+  "Ventas Totales": "#10B981",
+  "Pedidos": "#3B82F6",
+  "Usuarios": "#F38020",
+  "Productos": "#EF4444",
+};
 
 const statusClassMap: Record<string, string> = {
   completed: styles.orderStatusCompleted,
@@ -143,26 +37,93 @@ const statusClassMap: Record<string, string> = {
   pending: styles.orderStatusPending,
 };
 
+type TimeFilter = "day" | "week" | "month";
+
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("month");
+  const [data, setData] = useState<DashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const salesData = useMemo(() => generateSalesData(timeFilter), [timeFilter]);
-  const maxSales = useMemo(() => Math.max(...salesData.map((d) => d.value)), [salesData]);
-  const totalSales = useMemo(() => salesData.reduce((acc, d) => acc + d.value, 0), [salesData]);
-  const averageSales = useMemo(() => Math.round(totalSales / salesData.length), [totalSales, salesData]);
+  // Fetch dashboard data when timeFilter changes
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const result = await getDashboard(timeFilter);
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    if (mounted) {
+      fetchDashboard();
+    }
+  }, [timeFilter, mounted]);
+
+  // Initialize mounted state
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  // ALL hook calculations MUST be before any conditional returns (React Hooks Rule)
+  const kpisWithIcons = !data ? [] : data.kpis.map((kpi) => ({
+    ...kpi,
+    icon: kpiIconMap[kpi.title] || DollarSign,
+    color: kpiColorMap[kpi.title] || "#10B981",
+  }));
+
+  const salesData = data?.sales_chart || [];
+  
+  const maxSales = useMemo(() => {
+    if (salesData.length === 0) return 0;
+    return Math.max(...salesData.map((d: any) => d.value));
+  }, [salesData]);
+  
+  const totalSales = useMemo(() => {
+    return salesData.reduce((acc: number, d: any) => acc + d.value, 0);
+  }, [salesData]);
+  
+  const averageSales = useMemo(() => {
+    if (salesData.length === 0) return 0;
+    return Math.round(totalSales / salesData.length);
+  }, [totalSales, salesData]);
 
   const filterLabels: Record<TimeFilter, string> = {
     day: "Día",
     week: "Semana",
     month: "Mes",
   };
+
+  // Conditional returns AFTER all hooks
+  if (!mounted) return null;
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+          <p>Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+          <p style={{ color: 'red' }}>Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <div className={styles.container}>
@@ -184,7 +145,7 @@ export default function DashboardPage() {
 
       {/* KPIs Row */}
       <div className={styles.kpisGrid}>
-        {kpiData.map((kpi, index) => (
+        {kpisWithIcons.map((kpi, index) => (
           <div key={index} className={styles.kpiCard}>
             <div className={styles.kpiHeader}>
               <div
@@ -269,7 +230,7 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className={styles.ordersList}>
-            {recentOrders.map((order) => (
+            {data.recent_orders.map((order) => (
               <div key={order.id} className={styles.orderItem}>
                 <div className={styles.orderHeader}>
                   <span className={styles.orderId}>{order.id}</span>
@@ -280,7 +241,10 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <div className={styles.orderDetails}>
-                  <span className={styles.orderCustomer}>{order.customer}</span>
+                  <span className={styles.orderCustomer}>
+                    {order.products.slice(0, 3).join(", ")}
+                    {order.has_more && " Ver más"}
+                  </span>
                   <span className={styles.orderTotal}>{order.total}</span>
                 </div>
               </div>
@@ -299,11 +263,11 @@ export default function DashboardPage() {
               <h2 className={styles.alertsTitle}>Alertas de Inventario</h2>
             </div>
             <span className={styles.urgentBadge}>
-              {inventoryAlerts.filter((a) => a.urgent).length} Urgentes
+              {data.inventory_alerts.filter((a) => a.urgent).length} Urgentes
             </span>
           </div>
           <div className={styles.alertsList}>
-            {inventoryAlerts.map((item, index) => (
+            {data.inventory_alerts.map((item, index) => (
               <div key={index} className={styles.alertItem}>
                 <div className={styles.alertProductInfo}>
                   <Package className={styles.alertProductIcon} />
@@ -355,7 +319,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {topProducts.map((product, index) => (
+                {data.top_products.map((product, index) => (
                   <tr key={index} className={styles.tableRow}>
                     <td className={styles.tableCell}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>

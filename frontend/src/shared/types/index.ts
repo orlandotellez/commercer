@@ -166,5 +166,63 @@ export interface AdminProduct {
   featured: boolean;
 }
 
+// Dashboard types matching backend response (snake_case)
+export interface DashboardKPI {
+  title: string;
+  value: string;
+  change: string;
+  trend: string;
+}
+
+export interface SalesDataPoint {
+  label: string;
+  value: number;
+}
+
+export interface DashboardOrder {
+  id: string;
+  products: string[];
+  has_more: boolean;
+  total: string;
+  status: string;
+  date: string;
+}
+
+export interface InventoryAlert {
+  product: string;
+  stock: number;
+  threshold: number;
+  urgent: boolean;
+}
+
+export interface TopProduct {
+  name: string;
+  sales: number;
+  revenue: string;
+}
+
+// Backend response format (snake_case)
+export interface DashboardResponse {
+  kpis: DashboardKPI[];
+  sales_chart: SalesDataPoint[];
+  recent_orders: DashboardOrder[];
+  inventory_alerts: InventoryAlert[];
+  top_products: TopProduct[];
+}
+
+// Frontend-friendly format (camelCase with icons)
+export interface DashboardKPIWithIcon extends DashboardKPI {
+  icon: React.ComponentType<any>;
+  color: string;
+}
+
+export interface DashboardData {
+  kpis: DashboardKPIWithIcon[];
+  salesData: SalesDataPoint[];
+  recentOrders: DashboardOrder[];
+  inventoryAlerts: InventoryAlert[];
+  topProducts: TopProduct[];
+}
+
 
 

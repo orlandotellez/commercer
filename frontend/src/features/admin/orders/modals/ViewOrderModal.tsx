@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import styles from "./ViewOrderModal.module.css"
+
 // Tipos para la UI
 type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
 
@@ -31,11 +32,17 @@ interface ViewOrderModalProps {
   order: Order | null;
   isOpen: boolean;
   onClose: () => void;
-  statusLabels: Record<OrderStatus, string>
-  statusClassMap: Record<OrderStatus, string>
+  statusLabels: Record<OrderStatus, string>;
+  statusClassMap: Record<OrderStatus, string>;
 }
 
-export const ViewOrderModal = ({ order, isOpen, onClose, statusLabels, statusClassMap }: ViewOrderModalProps) => {
+export const ViewOrderModal = ({ 
+  order, 
+  isOpen, 
+  onClose, 
+  statusLabels, 
+  statusClassMap 
+}: ViewOrderModalProps) => {
   if (!isOpen || !order) return null;
 
   return (
@@ -88,6 +95,33 @@ export const ViewOrderModal = ({ order, isOpen, onClose, statusLabels, statusCla
             <span className={styles.detailLabel}>Total</span>
             <span className={styles.detailValue}>${order.total.toFixed(2)}</span>
           </div>
+
+          {/* Productos del pedido */}
+          {order.order_items && order.order_items.length > 0 && (
+            <div className={styles.productsSection}>
+              <h3 className={styles.productsTitle}>Productos</h3>
+              <table className={styles.productsTable}>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.order_items.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.product_name || 'Producto'}</td>
+                      <td>{item.quantity}</td>
+                      <td>${item.unit_price.toFixed(2)}</td>
+                      <td>${item.subtotal.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
         <div className={styles.modalActions}>
           <button className={styles.modalCancel} onClick={onClose}>
@@ -98,4 +132,3 @@ export const ViewOrderModal = ({ order, isOpen, onClose, statusLabels, statusCla
     </div>
   );
 };
-

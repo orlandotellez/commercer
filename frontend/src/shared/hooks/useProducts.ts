@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CategoryResponse, createProduct, CreateProductPayload, deleteProduct, generateSlug, listProducts, updateProduct } from "../lib/api";
 import { categoryMap, mapToAdminProduct } from "../lib/mappers";
 import { AdminProduct } from "../types";
+import { products as productsMock } from "@/features/product/data/products";
 
 export function useProducts() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -33,7 +34,7 @@ export function useProducts() {
       setSeeding(true);
       let addedCount = 0;
 
-      for (const p of products) {
+      for (const p of productsMock) {
         const slug = generateSlug(p.name);
         const catSlug = categoryMap[p.category] || "sin-categoria";
         const category = categories.find(c => c.slug === catSlug);
@@ -53,7 +54,8 @@ export function useProducts() {
           featured: p.featured,
         };
 
-        await createProduct(payload);
+        const create = await createProduct(payload);
+        console.log(create)
         addedCount++;
       }
 

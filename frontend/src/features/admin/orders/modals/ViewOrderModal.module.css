@@ -106,3 +106,45 @@
 .modalCancel:hover {
   background-color: #f8fafc;
 }
+
+.productsSection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.productsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 1rem;
+}
+
+.productsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.productsTable th {
+  text-align: left;
+  padding: 0.5rem;
+  color: #6B7280;
+  font-weight: 500;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.productsTable td {
+  padding: 0.5rem;
+  color: #000000;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.productsTable th:not(:first-child),
+.productsTable td:not(:first-child) {
+  text-align: right;
+}
+
+.productsTable tr:last-child td {
+  border-bottom: none;
+}

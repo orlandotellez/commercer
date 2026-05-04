@@ -1,4 +1,4 @@
-import { ChangePasswordPayload, ListOrdersParams, OrderResponse, OrdersListResponse, UpdateOrderStatusPayload, UpdateProfilePayload, UserProfile } from "../types";
+import { ChangePasswordPayload, DashboardResponse, ListOrdersParams, OrderResponse, OrdersListResponse, UpdateOrderStatusPayload, UpdateProfilePayload, UserProfile } from "../types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -379,6 +379,23 @@ export async function changePassword(payload: ChangePasswordPayload): Promise<{ 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Failed to change password' }));
     throw new Error(error.message || 'Failed to change password');
+  }
+
+  return res.json();
+}
+
+// Dashboard
+export type TimeFilter = "day" | "week" | "month";
+
+export async function getDashboard(period: TimeFilter = "month"): Promise<DashboardResponse> {
+  const res = await fetch(`${API_URL}/dashboard?period=${period}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Error al cargar el dashboard' }));
+    throw new Error(error.message || 'Error al cargar el dashboard');
   }
 
   return res.json();
