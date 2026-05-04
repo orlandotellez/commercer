@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, LayoutDashboard, Package, Settings, ShoppingCart, Users, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutDashboard, Package, Settings, ShoppingCart, Users, LogOut, TrendingUp } from "lucide-react";
 import { useSideBarStore } from "@/shared/store/useSidebarStore";
 import { useAuth } from "@/shared/hooks/useAuth";
 import styles from "./Sidebar.module.css"
@@ -11,6 +11,7 @@ export const SideBar = () => {
   const navItems = [
     { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { path: "/admin/orders", label: "Pedidos", icon: ShoppingCart },
+    { path: "/admin/sales", label: "Ventas", icon: TrendingUp },
     { path: "/admin/products", label: "Productos", icon: Package },
     { path: "/admin/users", label: "Usuarios", icon: Users },
     { path: "/admin/settings", label: "Configuración", icon: Settings },

@@ -209,6 +209,9 @@ export interface DashboardResponse {
   recent_orders: DashboardOrder[];
   inventory_alerts: InventoryAlert[];
   top_products: TopProduct[];
+  total_sales?: number;
+  completed_sales?: number;
+  pending_sales?: number;
 }
 
 // Frontend-friendly format (camelCase with icons)
