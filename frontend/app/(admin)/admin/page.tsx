@@ -11,7 +11,7 @@ import {
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
-import { getDashboard } from "@/shared/lib/api";
+import { getDashboard, getDashboardChart } from "@/shared/lib/api";
 import { DashboardResponse } from "@/shared/types";
 import styles from "./page.module.css";
 
@@ -44,9 +44,9 @@ export default function DashboardPage() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("month");
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingChart, setLoadingChart] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch dashboard data when timeFilter changes
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -64,7 +64,22 @@ export default function DashboardPage() {
     if (mounted) {
       fetchDashboard();
     }
-  }, [timeFilter, mounted]);
+  }, [mounted]);
+
+  const fetchChartData = async (period: TimeFilter) => {
+    if (!data) return;
+
+    try {
+      setLoadingChart(true);
+      const result = await getDashboardChart(period);
+      // Only update the sales_chart part
+      setData(prev => prev ? { ...prev, sales_chart: result } : null);
+    } catch (err) {
+      console.error('Error fetching chart data:', err);
+    } finally {
+      setLoadingChart(false);
+    }
+  };
 
   // Initialize mounted state
   useEffect(() => {
@@ -79,16 +94,16 @@ export default function DashboardPage() {
   }));
 
   const salesData = data?.sales_chart || [];
-  
+
   const maxSales = useMemo(() => {
     if (salesData.length === 0) return 0;
     return Math.max(...salesData.map((d: any) => d.value));
   }, [salesData]);
-  
+
   const totalSales = useMemo(() => {
     return salesData.reduce((acc: number, d: any) => acc + d.value, 0);
   }, [salesData]);
-  
+
   const averageSales = useMemo(() => {
     if (salesData.length === 0) return 0;
     return Math.round(totalSales / salesData.length);
@@ -102,6 +117,8 @@ export default function DashboardPage() {
 
   // Conditional returns AFTER all hooks
   if (!mounted) return null;
+
+  console.log(salesData)
 
   if (loading) {
     return (
@@ -183,7 +200,10 @@ export default function DashboardPage() {
                 <button
                   key={filter}
                   className={`${styles.filterButton} ${timeFilter === filter ? styles.filterButtonActive : ""}`}
-                  onClick={() => setTimeFilter(filter)}
+                  onClick={() => {
+                    setTimeFilter(filter); // Update button style
+                    fetchChartData(filter); // Fetch ONLY chart data
+                  }}
                 >
                   {filterLabels[filter]}
                 </button>
@@ -191,21 +211,31 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className={styles.chartBars}>
-            {salesData.map((item, index) => (
-              <div key={index} className={styles.chartBarWrapper}>
-                <div
-                  className={styles.chartBar}
-                  style={{
-                    height: `${(item.value / maxSales) * 100}%`,
-                  }}
-                >
-                  <div className={styles.chartBarTooltip}>
-                    ${item.value.toLocaleString()}
-                  </div>
-                </div>
-                <span className={styles.chartBarLabel}>{item.label}</span>
+            {loadingChart ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+                <p>Cargando gráfica...</p>
               </div>
-            ))}
+            ) : salesData.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+                <p>No hay datos para mostrar</p>
+              </div>
+            ) : (
+              salesData.map((item, index) => (
+                <div key={index} className={styles.chartBarWrapper}>
+                  <div
+                    className={styles.chartBar}
+                    style={{
+                      height: `${maxSales > 0 ? (item.value / maxSales) * 100 : 0}%`,
+                    }}
+                  >
+                    <div className={styles.chartBarTooltip}>
+                      ${item.value.toLocaleString()}
+                    </div>
+                  </div>
+                  <span className={styles.chartBarLabel}>{item.label}</span>
+                </div>
+              ))
+            )}
           </div>
           <div className={styles.chartSummary}>
             <div className={styles.chartSummaryItem}>
