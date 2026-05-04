@@ -400,3 +400,17 @@ export async function getDashboard(period: TimeFilter = "month"): Promise<Dashbo
 
   return res.json();
 }
+
+export async function getDashboardChart(period: TimeFilter = "month"): Promise<any[]> {
+  const res = await fetch(`${API_URL}/dashboard/chart?period=${period}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Error al cargar la gráfica' }));
+    throw new Error(error.message || 'Error al cargar la gráfica');
+  }
+
+  return res.json();
+}
