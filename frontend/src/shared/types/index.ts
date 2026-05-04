@@ -154,6 +154,7 @@ export interface AdminProduct {
   name: string;
   slug: string;
   category: string;
+  categoryName?: string;
   categoryId?: string;
   stock: number;
   price: number;

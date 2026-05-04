@@ -11,6 +11,7 @@ pub struct ProductResponse {
     pub original_price: Option<BigDecimal>,
     pub image: Option<String>,
     pub category_id: Option<String>,
+    pub category_name: Option<String>,
     pub brand: Option<String>,
     pub stock: i32,
     pub specs: Option<serde_json::Value>,

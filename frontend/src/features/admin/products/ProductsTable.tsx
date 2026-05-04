@@ -114,7 +114,7 @@ export const ProductsTable = ({
                   </div>
                 </td>
                 <td className={styles.tableCell}>
-                  <span className={styles.productCategory}>{product.category}</span>
+                  <span className={styles.productCategory}>{product.categoryName || product.category}</span>
                 </td>
                 <td className={`${styles.tableCell} ${styles.tableCellRight}`}>
                   <div className={styles.priceWrapper}>

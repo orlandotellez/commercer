@@ -42,22 +42,24 @@ impl ProductsService {
         let products = sqlx::query!(
             r#"
             SELECT 
-                id::text as "id", 
-                name, 
-                slug, 
-                description, 
-                price as "price", 
-                original_price, 
-                image_url as "image", 
-                category_id::text as "category_id", 
-                brand, 
-                stock as "stock", 
-                specs, 
-                COALESCE(active, false) as "active", 
-                COALESCE(featured, false) as "featured", 
-                created_at::text as "created_at"
-            FROM product
-            ORDER BY created_at DESC
+                p.id::text as "id", 
+                p.name, 
+                p.slug, 
+                p.description, 
+                p.price as "price", 
+                p.original_price, 
+                p.image_url as "image", 
+                p.category_id::text as "category_id", 
+                c.name as "category_name?",
+                p.brand, 
+                p.stock as "stock", 
+                p.specs, 
+                COALESCE(p.active, false) as "active", 
+                COALESCE(p.featured, false) as "featured", 
+                p.created_at::text as "created_at"
+            FROM product p
+            LEFT JOIN category c ON p.category_id = c.id
+            ORDER BY p.created_at DESC
             LIMIT $1 OFFSET $2
             "#,
             limit as i64,
@@ -77,6 +79,7 @@ impl ProductsService {
                 original_price: p.original_price,
                 image: p.image,
                 category_id: p.category_id,
+                category_name: p.category_name,
                 brand: p.brand,
                 stock: p.stock,
                 specs: p.specs,
@@ -100,6 +103,7 @@ impl ProductsService {
                 original_price, 
                 image_url as "image", 
                 category_id::text as "category_id", 
+                name as "category_name?",
                 brand, 
                 stock as "stock", 
                 specs, 
@@ -124,6 +128,7 @@ impl ProductsService {
             original_price: product.original_price,
             image: product.image,
             category_id: product.category_id,
+            category_name: product.category_name,
             brand: product.brand,
             stock: product.stock,
             specs: product.specs,
@@ -158,6 +163,7 @@ impl ProductsService {
                 original_price, 
                 image_url as "image", 
                 category_id::text as "category_id", 
+                name as "category_name?",
                 brand, 
                 stock as "stock", 
                 specs, 
@@ -191,6 +197,7 @@ impl ProductsService {
             original_price: result.original_price,
             image: result.image,
             category_id: result.category_id,
+            category_name: result.category_name,
             brand: result.brand,
             stock: result.stock,
             specs: result.specs,
@@ -234,6 +241,7 @@ impl ProductsService {
                 original_price, 
                 image_url as "image", 
                 category_id::text as "category_id", 
+                name as "category_name?",
                 brand, 
                 stock as "stock", 
                 specs, 
@@ -268,6 +276,7 @@ impl ProductsService {
             original_price: result.original_price,
             image: result.image,
             category_id: result.category_id,
+            category_name: result.category_name,
             brand: result.brand,
             stock: result.stock,
             specs: result.specs,
