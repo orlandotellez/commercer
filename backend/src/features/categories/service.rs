@@ -132,12 +132,9 @@ impl CategoriesService {
 
     /// Delete a category
     pub async fn delete_category(state: &AppState, id: Uuid) -> Result<(), AppError> {
-        let result = sqlx::query!(
-            "DELETE FROM category WHERE id = $1",
-            id
-        )
-        .execute(&state.db)
-        .await?;
+        let result = sqlx::query!("DELETE FROM category WHERE id = $1", id)
+            .execute(&state.db)
+            .await?;
 
         if result.rows_affected() == 0 {
             return Err(AppError::NotFound("Category not found".into()));

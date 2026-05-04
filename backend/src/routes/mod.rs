@@ -12,4 +12,5 @@ pub fn create_routes() -> Router<AppState> {
             features::categories::routes::categories_router(),
         )
         .nest("/api/v1/orders", features::orders::routes::orders_router())
+        .nest("/api/v1/dashboard", features::dashboard::routes::routes())
 }

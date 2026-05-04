@@ -3,3 +3,4 @@ pub mod users;
 pub mod products;
 pub mod categories;
 pub mod orders;
+pub mod dashboard;
