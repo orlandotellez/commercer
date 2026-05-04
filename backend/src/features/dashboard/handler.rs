@@ -11,6 +11,8 @@ use crate::{
     shared::{errors::AppError, state::AppState},
 };
 
+use bigdecimal::ToPrimitive;
+
 #[derive(Debug, serde::Deserialize)]
 pub struct DashboardQuery {
     pub period: Option<String>,
@@ -29,7 +31,7 @@ pub async fn get_dashboard(
     }
 
     // Fetch all dashboard data concurrently
-    let (kpis, sales_chart, top_products, inventory_alerts, recent_orders) = tokio::join!(
+    let (kpis_result, sales_chart, top_products, inventory_alerts, recent_orders) = tokio::join!(
         DashboardService::get_kpis(&state),
         DashboardService::get_sales_by_period(&state, &period),
         DashboardService::get_top_products(&state),
@@ -37,12 +39,18 @@ pub async fn get_dashboard(
         DashboardService::get_recent_orders(&state)
     );
 
+    // Destructure the tuple from get_kpis result
+    let (kpis, total_sales, completed_sales, pending_sales) = kpis_result?;
+
     let response = DashboardResponse {
-        kpis: kpis?,
+        kpis,
         sales_chart: sales_chart?,
         recent_orders: recent_orders?,
         inventory_alerts: inventory_alerts?,
         top_products: top_products?,
+        total_sales: total_sales.to_f64().unwrap_or(0.0),
+        completed_sales: completed_sales.to_f64().unwrap_or(0.0),
+        pending_sales: pending_sales.to_f64().unwrap_or(0.0),
     };
 
     Ok(Json(response))

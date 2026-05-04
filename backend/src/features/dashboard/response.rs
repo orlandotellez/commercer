@@ -52,4 +52,7 @@ pub struct DashboardResponse {
     pub recent_orders: Vec<RecentOrder>,
     pub inventory_alerts: Vec<InventoryAlert>,
     pub top_products: Vec<TopProduct>,
+    pub total_sales: f64,
+    pub completed_sales: f64,
+    pub pending_sales: f64,
 }

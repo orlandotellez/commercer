@@ -9,21 +9,39 @@ use crate::{
 pub struct DashboardService;
 
 impl DashboardService {
-    /// Calculate KPIs: total_sales, total_orders, total_users, total_products
-    pub async fn get_kpis(state: &AppState) -> Result<Vec<KPIItem>, AppError> {
-        // Query for current period (last 30 days)
+    /// Calculate KPIs: total_sales, completed_sales, pending_sales, total_orders, total_users, total_products
+    /// Also calculates change percentage vs previous period
+    /// Returns: (KPI items, total_sales, completed_sales, pending_sales) as tuple
+    pub async fn get_kpis(
+        state: &AppState,
+    ) -> Result<(Vec<KPIItem>, BigDecimal, BigDecimal, BigDecimal), AppError> {
+        // Get all sales values
         let (total_sales,): (BigDecimal,) = sqlx::query_as(
+            "SELECT COALESCE(SUM(total), 0) FROM orders WHERE created_at >= NOW() - INTERVAL '30 days'"
+        )
+        .fetch_one(&state.db)
+        .await?;
+
+        let (completed_sales,): (BigDecimal,) = sqlx::query_as(
             "SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '30 days'"
         )
         .fetch_one(&state.db)
         .await?;
 
+        let (pending_sales,): (BigDecimal,) = sqlx::query_as(
+            "SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = 'pending' AND created_at >= NOW() - INTERVAL '30 days'"
+        )
+        .fetch_one(&state.db)
+        .await?;
+
+        // Existing counts...
         let (total_orders,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM orders WHERE created_at >= NOW() - INTERVAL '30 days'",
         )
         .fetch_one(&state.db)
         .await?;
 
+        // ... rest of the function (copy from existing code)
         let (total_users,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'",
         )
@@ -37,7 +55,7 @@ impl DashboardService {
 
         // Query for previous period (30-60 days ago) for comparison
         let (prev_sales,): (BigDecimal,) = sqlx::query_as(
-            "SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '30 days'"
+            "SELECT COALESCE(SUM(total), 0) FROM orders WHERE created_at >= NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '30 days'"
         )
         .fetch_one(&state.db)
         .await?;
@@ -68,7 +86,7 @@ impl DashboardService {
         let users_value = format!("{}", total_users);
         let products_value = format!("{}", total_products);
 
-        Ok(vec![
+        let kpis = vec![
             KPIItem {
                 title: "Total Sales".to_string(),
                 value: sales_value,
@@ -105,7 +123,9 @@ impl DashboardService {
                 change: "0%".to_string(),
                 trend: "up".to_string(),
             },
-        ])
+        ];
+
+        Ok((kpis, total_sales, completed_sales, pending_sales))
     }
 
     /// Get sales data grouped by period (day/week/month)
@@ -128,10 +148,10 @@ impl DashboardService {
         let query = format!(
             r#"
             SELECT 
-                DATE_TRUNC('{}', created_at) as period,
+                DATE_TRUNC('{}', created_at)::text as period,
                 COALESCE(SUM(total), 0) as total
             FROM orders 
-            WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '{}'
+            WHERE created_at >= NOW() - INTERVAL '{}'
             GROUP BY DATE_TRUNC('{}', created_at)
             ORDER BY period
             "#,
