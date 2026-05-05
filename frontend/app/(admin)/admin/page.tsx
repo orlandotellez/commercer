@@ -11,9 +11,9 @@ import {
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
-import { getDashboard, getDashboardChart } from "@/shared/lib/api";
 import { DashboardResponse } from "@/shared/types";
 import styles from "./page.module.css";
+import { getDashboard, getDashboardChart } from "@/shared/api/dashboard";
 
 // Icon mapping for KPIs
 const kpiIconMap: Record<string, React.ComponentType<any>> = {

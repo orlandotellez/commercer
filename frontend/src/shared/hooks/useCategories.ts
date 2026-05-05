@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { CategoryResponse, createCategory, listCategories, seedCategories } from "../lib/api";
+import { CategoryResponse } from "../types";
+import { createCategory, listCategories } from "../api/categories";
+import { seedCategories } from "../lib/data";
 
 export function useCategories() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Order, OrderStatus } from "../types";
-import { listOrders } from "../lib/api";
 import { mapApiOrderToUi } from "../lib/mappers";
+import { listOrders } from "../api/orders";
 
 const ITEMS_PER_PAGE = 10;
 

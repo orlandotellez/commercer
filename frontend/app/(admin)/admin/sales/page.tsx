@@ -6,9 +6,9 @@ import {
   TrendingDown,
   DollarSign,
 } from "lucide-react";
-import { getDashboard, getDashboardChart } from "@/shared/lib/api";
 import { DashboardResponse } from "@/shared/types";
 import styles from "../page.module.css";
+import { getDashboard, getDashboardChart } from "@/shared/api/dashboard";
 
 type TimeFilter = "day" | "week" | "month";
 

@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { listProducts, listCategories, ProductResponse, CategoryResponse, categorySlugToId } from '@/shared/lib/api';
 import { ProductCard } from '@/features/product/components/ProductCard';
 import { ArrowRight, Cpu, Shield, Truck, Headphones, Loader2 } from 'lucide-react';
 import styles from './page.module.css';
+import { CategoryResponse, ProductResponse } from '@/shared/types';
+import { categorySlugToId } from '@/shared/lib/mappers';
+import { listProducts } from '@/shared/api/products';
+import { listCategories } from '@/shared/api/categories';
 
 function mapToFrontendProduct(p: ProductResponse, categorySlug?: string) {
   // Convertir original_price a número si existe
@@ -24,7 +27,7 @@ function mapToFrontendProduct(p: ProductResponse, categorySlug?: string) {
     // Si sigue siendo NaN, poner undefined
     if (isNaN(originalPrice as number)) originalPrice = undefined;
   }
-    
+
   return {
     id: p.id,
     name: p.name,

@@ -15,11 +15,7 @@ import {
   Phone,
 } from "lucide-react";
 import styles from "./page.module.css";
-import {
-  getCurrentUser,
-  updateProfile,
-  changePassword,
-} from "@/shared/lib/api";
+import { changePassword, getCurrentUser, updateProfile } from "@/shared/api/profile";
 
 interface SettingsSection {
   id: string;

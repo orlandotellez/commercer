@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useCart } from '@/features/cart/context/CartContext';
-import { listProducts, ProductResponse, categorySlugToId } from '@/shared/lib/api';
 import styles from './page.module.css';
 import { ProductDetail } from '@/features/product/components/ProductDetail';
 import { BreadCrumb } from '@/features/product/components/BreadCrumb';
 import { ProductRelated } from '@/features/product/components/ProductRelated';
 import { ProductNotFound } from '@/features/product/components/ProductNotFound';
 import { Loader2 } from 'lucide-react';
+import { ProductResponse } from '@/shared/types';
+import { categorySlugToId } from '@/shared/lib/mappers';
+import { listProducts } from '@/shared/api/products';
 
 function mapToFrontendProduct(p: ProductResponse) {
   // Convertir original_price a número si existe
@@ -28,7 +30,7 @@ function mapToFrontendProduct(p: ProductResponse) {
     // Si sigue siendo NaN, poner undefined
     if (isNaN(originalPrice as number)) originalPrice = undefined;
   }
-    
+
   return {
     id: p.id,
     name: p.name,
@@ -50,7 +52,6 @@ function mapToFrontendProduct(p: ProductResponse) {
 
 export default function ProductPage() {
   const params = useParams();
-  const router = useRouter();
   const slug = params?.slug as string;
 
   const [product, setProduct] = useState<ProductResponse | null>(null);
@@ -62,7 +63,7 @@ export default function ProductPage() {
       try {
         const productsData = await listProducts({ limit: 100 });
         setAllProducts(productsData);
-        
+
         // Buscar el producto por slug
         const found = productsData.find(p => p.slug === slug);
         setProduct(found || null);
@@ -103,8 +104,8 @@ export default function ProductPage() {
 
   const discount: number = product.original_price
     ? Math.round(
-        ((product.original_price - product.price) / product.original_price) * 100
-      )
+      ((product.original_price - product.price) / product.original_price) * 100
+    )
     : 0;
 
   return (

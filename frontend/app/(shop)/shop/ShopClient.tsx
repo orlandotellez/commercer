@@ -2,13 +2,15 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { listProducts, ProductResponse, listCategories, CategoryResponse, categorySlugToId } from '@/shared/lib/api';
 import { ProductCard } from '@/features/product/components/ProductCard';
 import styles from './ShopClient.module.css';
 import { Sidebar } from '@/features/shop/components/Sidebar';
 import { TopBar } from '@/features/shop/components/TopBar';
 import { BreadCrumb } from '@/features/shop/components/BreadCrumb';
 import { Loader2 } from 'lucide-react';
+import { CategoryResponse, ProductResponse } from '@/shared/types';
+import { listProducts } from '@/shared/api/products';
+import { listCategories } from '@/shared/api/categories';
 
 // Convertir del formato del backend al formato del frontend
 function mapToFrontendProduct(p: ProductResponse, categoryIdToSlug: Record<string, string>) {
@@ -28,10 +30,10 @@ function mapToFrontendProduct(p: ProductResponse, categoryIdToSlug: Record<strin
     // Si sigue siendo NaN,poner undefined
     if (isNaN(originalPrice as number)) originalPrice = undefined;
   }
-    
+
   // Convertir category_id (UUID) a slug
   const categorySlug = p.category_id ? categoryIdToSlug[p.category_id] || '' : '';
-    
+
   return {
     id: p.id,
     name: p.name,
@@ -203,14 +205,14 @@ export default function ShopClient() {
 
   return (
     <div className={styles.container}>
-      <BreadCrumb 
+      <BreadCrumb
         activeCategory={activeCategory ? {
           id: activeCategory.slug,
           name: activeCategory.name,
           slug: activeCategory.slug,
           icon: 'Monitor',
           count: categoryCounts[activeCategory.slug] || 0,
-        } : undefined} 
+        } : undefined}
       />
 
       <div className={styles.layout}>
@@ -241,7 +243,7 @@ export default function ShopClient() {
             filtered={filtered}
             sortBy={sortBy}
             setSortBy={(e) => setSortBy(e.target.value)}
-            setShowFilters={() => {}}
+            setShowFilters={() => { }}
             updateCategory={updateCategory}
           />
 

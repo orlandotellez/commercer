@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { CategoryResponse, createProduct, CreateProductPayload, deleteProduct, generateSlug, listProducts, updateProduct } from "../lib/api";
 import { categoryMap, mapToAdminProduct } from "../lib/mappers";
-import { AdminProduct } from "../types";
+import { AdminProduct, CategoryResponse, CreateProductPayload } from "../types";
 import { products as productsMock } from "@/features/product/data/products";
+import { createProduct, deleteProduct, listProducts, updateProduct } from "../api/products";
+import { generateSlug } from "../utils/format";
 
 export function useProducts() {
   const [products, setProducts] = useState<AdminProduct[]>([]);

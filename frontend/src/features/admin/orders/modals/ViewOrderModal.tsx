@@ -1,7 +1,7 @@
 import { X, Loader2 } from "lucide-react";
 import styles from "./ViewOrderModal.module.css"
 import { useState, useEffect } from "react";
-import { updateOrderStatus } from "@/shared/lib/api";
+import { updateOrderStatus } from "@/shared/api/orders";
 
 // Tipos para la UI
 type OrderStatus = "pending" | "processing" | "shipped" | "completed" | "cancelled";
@@ -40,11 +40,11 @@ interface ViewOrderModalProps {
   onOrderUpdated?: (updatedOrder: any) => void;
 }
 
-export const ViewOrderModal = ({ 
-  order, 
-  isOpen, 
-  onClose, 
-  statusLabels, 
+export const ViewOrderModal = ({
+  order,
+  isOpen,
+  onClose,
+  statusLabels,
   statusClassMap,
   onStatusUpdate,
   onOrderUpdated
@@ -62,10 +62,10 @@ export const ViewOrderModal = ({
 
   const handleStatusUpdate = async () => {
     if (!order || selectedStatus === order.status) return;
-    
+
     setUpdating(true);
     setUpdateError(null);
-    
+
     try {
       const updatedOrder = await updateOrderStatus(order.id, { status: selectedStatus });
       // Notify parent to refresh list
@@ -140,7 +140,7 @@ export const ViewOrderModal = ({
           <div className={styles.statusChangeSection}>
             <h3 className={styles.statusChangeTitle}>Cambiar Estado</h3>
             <div className={styles.statusChangeControls}>
-              <select 
+              <select
                 className={styles.statusSelect}
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
@@ -152,7 +152,7 @@ export const ViewOrderModal = ({
                 <option value="completed">Completado</option>
                 <option value="cancelled">Cancelado</option>
               </select>
-              <button 
+              <button
                 className={styles.statusUpdateButton}
                 onClick={handleStatusUpdate}
                 disabled={updating || selectedStatus === order.status}

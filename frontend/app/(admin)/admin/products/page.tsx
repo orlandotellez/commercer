@@ -12,8 +12,7 @@ import { CreateProductModal } from "@/features/admin/products/modals/CreateProdu
 import { EditProductModal } from "@/features/admin/products/modals/EditProductModal";
 import { useCategories } from "@/shared/hooks/useCategories";
 import { useProducts } from "@/shared/hooks/useProducts";
-import { AdminProduct } from "@/shared/types";
-import { CreateProductPayload } from "@/shared/lib/api";
+import { AdminProduct, CreateProductPayload } from "@/shared/types";
 
 const ITEMS_PER_PAGE = 10;
 
