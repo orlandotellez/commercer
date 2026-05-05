@@ -228,5 +228,59 @@ export interface DashboardData {
   topProducts: TopProduct[];
 }
 
+export interface CreateProductPayload {
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  original_price?: number;
+  image?: string;
+  category_id?: string;
+  brand?: string;
+  stock: number;
+  specs?: Record<string, string>;
+  active?: boolean;
+  featured?: boolean;
+}
+
+export interface ProductResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  original_price?: number;
+  image?: string;
+  category_id?: string;
+  brand?: string;
+  stock: number;
+  specs?: Record<string, string>;
+  active: boolean;
+  featured: boolean;
+  created_at?: string;
+}
+
+export interface ListProductsParams {
+  search?: string;
+  category_id?: string;
+  featured?: boolean;
+  active?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+// Categories
+export interface CategoryResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export interface CreateCategoryPayload {
+  name: string;
+  slug: string;
+  description?: string;
+}
 
 

@@ -53,3 +53,28 @@ export function mapApiOrderToUi(apiOrder: OrderResponse): Order {
   };
 }
 
+// Map para convertir category_id del backend (slug) al id del frontend
+export const categoryIdToSlug: Record<string, string> = {
+  "procesadores": "cpu",
+  "tarjetas-graficas": "gpu",
+  "memoria": "ram",
+  "almacenamiento": "storage",
+  "placas-base": "motherboard",
+  "fuentes-alimentacion": "psu",
+  "monitores": "monitor",
+  "perifericos": "peripherals",
+  "accesorios": "accessories",
+};
+
+export const categorySlugToId: Record<string, string> = {
+  "cpu": "procesadores",
+  "gpu": "tarjetas-graficas",
+  "ram": "memoria",
+  "storage": "almacenamiento",
+  "motherboard": "placas-base",
+  "psu": "fuentes-alimentacion",
+  "monitor": "monitores",
+  "peripherals": "perifericos",
+  "accessories": "accesorios",
+};
+
