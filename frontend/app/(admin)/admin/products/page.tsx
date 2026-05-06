@@ -13,6 +13,8 @@ import { EditProductModal } from "@/features/admin/products/modals/EditProductMo
 import { useCategories } from "@/shared/hooks/useCategories";
 import { useProducts } from "@/shared/hooks/useProducts";
 import { AdminProduct, CreateProductPayload } from "@/shared/types";
+import { ErrorState } from "@/shared/components/ErrorState";
+import { LoadingState } from "@/shared/components/LoadingState";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -113,21 +115,27 @@ export default function ProductsPage() {
         activeFiltersCount={activeFiltersCount}
       />
 
+      {/* Error State */}
+      {error && <ErrorState error={error} fetch={() => fetchProducts()} />}
+
+      {loading && <LoadingState title="Cargando products..." />}
+
       {/* Products Table */}
-      <ProductsTable
-        products={paginatedProducts}
-        onView={(product) => {
-          setSelectedProduct(product);
-          setShowViewModal(true);
-        }}
-        onEdit={(product) => {
-          setSelectedProduct(product);
-          setShowEditModal(true);
-        }}
-        onDelete={handleDelete}
-        loading={loading}
-        error={error}
-      />
+      {!loading && !error &&
+        <ProductsTable
+          products={paginatedProducts}
+          onView={(product) => {
+            setSelectedProduct(product);
+            setShowViewModal(true);
+          }}
+          onEdit={(product) => {
+            setSelectedProduct(product);
+            setShowEditModal(true);
+          }}
+          onDelete={handleDelete}
+          loading={loading}
+          error={error}
+        />}
 
       {/* Pagination */}
       {totalPages > 1 && !loading && (

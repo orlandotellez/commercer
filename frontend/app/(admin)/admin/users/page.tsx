@@ -97,7 +97,9 @@ export default function UsersPage() {
       {error && <ErrorState error={error} fetch={() => fetchUsers(currentPage, searchTerm, roleFilter)} />}
 
       {/* Loading State */}
-      {isLoading ? <LoadingState title="Cargando usuarios..." /> : (
+      {isLoading && <LoadingState title="Cargando usuarios..." />}
+
+      {!isLoading && !error &&
         /* Users Table */
         <UsersTable
           filteredUsers={filteredUsers}
@@ -106,7 +108,7 @@ export default function UsersPage() {
           setShowViewModal={setShowViewModal}
           handleDelete={handleDelete}
         />
-      )}
+      }
 
       {/* Pagination */}
       {totalPages > 1 && !isLoading && (

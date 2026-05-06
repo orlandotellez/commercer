@@ -14,6 +14,8 @@ import {
 import { DashboardResponse } from "@/shared/types";
 import styles from "./page.module.css";
 import { getDashboard, getDashboardChart } from "@/shared/api/dashboard";
+import { LoadingState } from "@/shared/components/LoadingState";
+import { ErrorState } from "@/shared/components/ErrorState";
 
 // Icon mapping for KPIs
 const kpiIconMap: Record<string, React.ComponentType<any>> = {
@@ -121,23 +123,11 @@ export default function DashboardPage() {
   console.log(salesData)
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <p>Cargando dashboard...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState title="Cargando dashboard..." />;
   }
 
   if (error) {
-    return (
-      <div className={styles.container}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <p style={{ color: 'red' }}>Error: {error}</p>
-        </div>
-      </div>
-    );
+    return <ErrorState error={error} fetch={() => fetchChartData} />;
   }
 
   if (!data) return null;

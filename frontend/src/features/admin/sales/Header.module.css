@@ -1,0 +1,39 @@
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageTitle {
+  color: var(--font-color-title);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.pageSubtitle {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.lastUpdateLabel {
+  color: #6B7280;
+}
+
+.lastUpdateValue {
+  color: #000;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+}

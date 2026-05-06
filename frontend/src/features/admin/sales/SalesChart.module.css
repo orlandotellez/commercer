@@ -1,0 +1,153 @@
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* Sales Chart */
+.salesChart {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.chartTitle {
+  color: #000;
+  font-weight: 600;
+}
+
+.chartSelect {
+  background-color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: #000;
+  cursor: pointer;
+}
+
+.filterButtons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.filterButton {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterButton:hover {
+  border-color: #0f1729;
+}
+
+.filterButtonActive {
+  background-color: #0f1729;
+  border-color: #0f1729;
+  color: #fff;
+}
+
+.filterButtonActive:hover {
+  background-color: #1e293b;
+}
+
+.chartBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 12rem;
+  position: relative;
+}
+
+.chartBarWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.chartBar {
+  width: 100%;
+  background-color: #0f1729;
+  border-radius: 2px 2px 0 0;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s;
+  min-height: 4px;
+  align-self: flex-end;
+}
+
+.chartBar:hover {
+  background-color: #0f1729;
+}
+
+.chartBarTooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #e5e7eb;
+  color: #000;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-bottom: 0.5rem;
+}
+
+.chartBar:hover .chartBarTooltip {
+  opacity: 1;
+}
+
+.chartBarLabel {
+  color: #6B7280;
+  font-size: 0.625rem;
+  margin-top: 0.5rem;
+}
+
+.chartSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.chartSummaryItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.chartSummaryLabel {
+  color: #6B7280;
+  font-size: 0.75rem;
+}
+
+.chartSummaryValue {
+  color: #000;
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+}
+
+.chartSummaryValuePositive {
+  color: #10B981;
+}
