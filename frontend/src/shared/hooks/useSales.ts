@@ -93,8 +93,76 @@ export const useSalesDashboard = () => {
       },
     ]
 
-  // Chart data
-  const salesData: SalesDataItem[] = data?.sales_chart || []
+  // Chart data - ensure minimum items based on filter
+  const salesData: SalesDataItem[] = useMemo(() => {
+    const items = data?.sales_chart || []
+    
+    // Define limits per filter
+    const limits = { day: 7, week: 4, month: 4 }
+    const limit = limits[timeFilter]
+
+    // Generate the date range (last 7 days, 4 weeks, 4 months)
+    const generateRange = () => {
+      const today = new Date()
+      const range: string[] = []
+      
+      if (timeFilter === "day") {
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(today)
+          d.setDate(d.getDate() - i)
+          range.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`)
+        }
+      } else if (timeFilter === "week") {
+        for (let i = 3; i >= 0; i--) {
+          const d = new Date(today)
+          d.setDate(d.getDate() - (i * 7))
+          range.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`)
+        }
+      } else {
+        for (let i = 3; i >= 0; i--) {
+          const d = new Date(today)
+          d.setMonth(d.getMonth() - i)
+          range.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`)
+        }
+      }
+      return range
+    }
+
+    // Create a map of existing data
+    const dataMap = new Map(items.map(item => [item.label, item.value]))
+    
+    // Generate complete range and fill with existing data or 0
+    const range = generateRange()
+    const filled = range.map(label => ({
+      label,
+      value: dataMap.get(label) || 0
+    }))
+
+    // Take only the last 'limit' items
+    const recent = filled.slice(-limit)
+
+    // Format date labels
+    return recent.map(item => {
+      if (typeof item.label === "string" && item.label.includes("-")) {
+        const parts = item.label.split("-")
+        const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+        
+        // Handle YYYY-MM format (month view)
+        if (parts.length === 2) {
+          const month = parseInt(parts[1]) - 1
+          return { ...item, label: months[month] }
+        }
+        
+        // Handle YYYY-MM-DD format (day view)
+        if (parts.length === 3) {
+          const day = parseInt(parts[2])
+          const month = parseInt(parts[1]) - 1
+          return { ...item, label: `${day} ${months[month]}` }
+        }
+      }
+      return item
+    })
+  }, [data?.sales_chart, timeFilter])
 
   const maxSales = useMemo(() => {
     if (salesData.length === 0) return 0
