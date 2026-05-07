@@ -123,6 +123,17 @@
   justify-content: center;
 }
 
+.profile {
+  position: relative;
+  color: white;
+  text-decoration: none;
+}
+
+.profile:hover {
+  color: #2563eb;
+}
+
+
 /* Mobile search */
 .searchMobile {
   padding: 0 16px 12px;
