@@ -35,11 +35,17 @@ dotenvy = "0.15"
 # Validación
 validator = { version = "0.19", features = ["derive"] }
 
+# Email
+resend = {version = "0.1", features = ["little"]}
+resend_derive = "0.1"
+
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 bigdecimal = { version = "0.4.10", features = ["serde"] }
 sqlx-cli = "0.8.6"
+
+reqwest = { version = "0.12", features = ["json"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

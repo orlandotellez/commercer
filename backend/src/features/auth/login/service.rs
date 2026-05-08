@@ -28,7 +28,10 @@ pub struct LoginResult {
 pub struct LoginService;
 
 impl LoginService {
-    pub async fn login_user(state: &AppState, payload: LoginRequest) -> Result<LoginResult, AppError> {
+    pub async fn login_user(
+        state: &AppState,
+        payload: LoginRequest,
+    ) -> Result<LoginResult, AppError> {
         // Query simple sin role para evitar errores
         let record = sqlx::query!(
             r#"

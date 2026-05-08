@@ -11,7 +11,10 @@ use dotenvy::dotenv;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 
-use crate::{database::connection::create_pool, shared::{config::constants::FRONTEND_URL, state::AppState}};
+use crate::{
+    database::connection::create_pool,
+    shared::{config::constants::FRONTEND_URL, state::AppState},
+};
 
 const PORT: i32 = 3001;
 const HOST: &str = "0.0.0.0";
@@ -34,7 +37,9 @@ async fn main() {
 
     let db = create_pool().await.expect("Error connect database");
 
-    let router: Router = routes::create_routes().with_state(AppState {db: db}).layer(cors);
+    let router: Router = routes::create_routes()
+        .with_state(AppState { db: db })
+        .layer(cors);
 
     let addr: String = format!("{}:{}", HOST, PORT);
 

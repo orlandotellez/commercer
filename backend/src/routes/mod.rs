@@ -1,6 +1,6 @@
 use axum::Router;
 
-use crate::{features, shared::state::{AppState}};
+use crate::{features, shared::state::AppState};
 
 pub fn create_routes() -> Router<AppState> {
     Router::new()

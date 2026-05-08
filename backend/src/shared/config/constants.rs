@@ -10,3 +10,6 @@ pub static DATABASE_URL: Lazy<String> =
 
 pub static JWT_SECRET: Lazy<String> =
     Lazy::new(|| env::var("JWT_SECRET").expect("JWT_SECRET not be defined"));
+
+pub static RESEND_API_KEY: Lazy<String> =
+    Lazy::new(|| env::var("RESEND_API_KEY").expect("RESEND_API_KEY not be defined"));

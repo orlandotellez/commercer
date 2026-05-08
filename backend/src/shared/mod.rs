@@ -3,3 +3,4 @@ pub mod errors;
 pub mod helpers;
 pub mod models;
 pub mod state;
+pub mod templates;

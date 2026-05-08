@@ -2,7 +2,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct CreateOrderRequest {
-    pub user_id: String,
+    pub user_id: Option<String>,
+    pub customer_name: Option<String>,
+    pub customer_email: Option<String>,
+    pub customer_phone: Option<String>,
+    pub shipping_address: Option<String>,
+    pub payment_name: Option<String>,
     pub items: Vec<CreateOrderItemRequest>,
 }
 

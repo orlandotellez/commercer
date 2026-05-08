@@ -33,6 +33,13 @@ impl OrdersService {
                 subtotal,
                 taxes,
                 total,
+                user_id::text as "user_id",
+                customer_name,
+                customer_email,
+                customer_phone,
+                shipping_address,
+                payment_name,
+                is_guest,
                 created_at::text as "created_at"
             FROM orders
             ORDER BY created_at DESC
@@ -55,6 +62,13 @@ impl OrdersService {
                 subtotal: order.subtotal.to_f64().unwrap_or(0.0),
                 taxes: order.taxes.to_f64().unwrap_or(0.0),
                 total: order.total.to_f64().unwrap_or(0.0),
+                user_id: order.user_id,
+                customer_name: order.customer_name,
+                customer_email: order.customer_email,
+                customer_phone: order.customer_phone,
+                shipping_address: order.shipping_address,
+                payment_name: order.payment_name,
+                is_guest: order.is_guest,
                 created_at: order.created_at.clone(),
                 items,
             });
@@ -113,6 +127,13 @@ impl OrdersService {
                 subtotal,
                 taxes,
                 total,
+                user_id::text as "user_id",
+                customer_name,
+                customer_email,
+                customer_phone,
+                shipping_address,
+                payment_name,
+                is_guest,
                 created_at::text as "created_at"
             FROM orders
             WHERE id = $1
@@ -132,6 +153,13 @@ impl OrdersService {
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
             taxes: order.taxes.to_f64().unwrap_or(0.0),
             total: order.total.to_f64().unwrap_or(0.0),
+            user_id: order.user_id,
+            customer_name: order.customer_name,
+            customer_email: order.customer_email,
+            customer_phone: order.customer_phone,
+            shipping_address: order.shipping_address,
+            payment_name: order.payment_name,
+            is_guest: order.is_guest,
             created_at: order.created_at.clone(),
             items,
         })
@@ -154,23 +182,49 @@ impl OrdersService {
         let taxes_bd = BigDecimal::from((taxes * 100.0) as i64) / BigDecimal::from(100);
         let total_bd = BigDecimal::from((total * 100.0) as i64) / BigDecimal::from(100);
 
-        // Insert order
+        // Parse user_id and determine if guest
+        let (parsed_user_id, is_guest) = match &payload.user_id {
+            Some(uid) if !uid.is_empty() && !uid.starts_with("temp-") => {
+                // Valid UUID = logged in user
+                (Uuid::parse_str(uid).ok(), false)
+            }
+            _ => {
+                // No user_id or temp ID = guest
+                (None, true)
+            }
+        };
+
+        // Insert order with customer data
         let order = sqlx::query!(
             r#"
-            INSERT INTO orders (id, status, subtotal, taxes, total)
-            VALUES ($1, 'pending', $2, $3, $4)
+            INSERT INTO orders (id, status, subtotal, taxes, total, user_id, customer_name, customer_email, customer_phone, shipping_address, payment_name, is_guest)
+            VALUES ($1, 'pending', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING 
                 id::text as "id",
                 status,
                 subtotal,
                 taxes,
                 total,
+                user_id::text as "user_id",
+                customer_name,
+                customer_email,
+                customer_phone,
+                shipping_address,
+                payment_name,
+                is_guest,
                 created_at::text as "created_at"
             "#,
             order_id,
             subtotal_bd,
             taxes_bd,
-            total_bd
+            total_bd,
+            parsed_user_id,
+            payload.customer_name,
+            payload.customer_email,
+            payload.customer_phone,
+            payload.shipping_address,
+            payload.payment_name,
+            is_guest
         )
         .fetch_one(&state.db)
         .await?;
@@ -225,6 +279,13 @@ impl OrdersService {
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
             taxes: order.taxes.to_f64().unwrap_or(0.0),
             total: order.total.to_f64().unwrap_or(0.0),
+            user_id: order.user_id,
+            customer_name: order.customer_name,
+            customer_email: order.customer_email,
+            customer_phone: order.customer_phone,
+            shipping_address: order.shipping_address,
+            payment_name: order.payment_name,
+            is_guest: order.is_guest,
             created_at: order.created_at.clone(),
             items,
         })
@@ -251,6 +312,13 @@ impl OrdersService {
                 subtotal,
                 taxes,
                 total,
+                user_id::text as "user_id",
+                customer_name,
+                customer_email,
+                customer_phone,
+                shipping_address,
+                payment_name,
+                is_guest,
                 created_at::text as "created_at"
             "#,
             payload.status,
@@ -269,6 +337,13 @@ impl OrdersService {
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
             taxes: order.taxes.to_f64().unwrap_or(0.0),
             total: order.total.to_f64().unwrap_or(0.0),
+            user_id: order.user_id,
+            customer_name: order.customer_name,
+            customer_email: order.customer_email,
+            customer_phone: order.customer_phone,
+            shipping_address: order.shipping_address,
+            payment_name: order.payment_name,
+            is_guest: order.is_guest,
             created_at: order.created_at.clone(),
             items,
         })
