@@ -16,6 +16,7 @@ import styles from "./page.module.css";
 import { getDashboard, getDashboardChart } from "@/shared/api/dashboard";
 import { LoadingState } from "@/shared/components/LoadingState";
 import { ErrorState } from "@/shared/components/ErrorState";
+import { SalesChart } from "@/features/admin/sales/SalesChart";
 
 // Icon mapping for KPIs
 const kpiIconMap: Record<string, React.ComponentType<any>> = {
@@ -182,64 +183,17 @@ export default function DashboardPage() {
       {/* Chart & Orders Row */}
       <div className={styles.chartsRow}>
         {/* Sales Chart */}
-        <div className={styles.salesChart}>
-          <div className={styles.chartHeader}>
-            <h2 className={styles.chartTitle}>Ventas</h2>
-            <div className={styles.filterButtons}>
-              {(["day", "week", "month"] as TimeFilter[]).map((filter) => (
-                <button
-                  key={filter}
-                  className={`${styles.filterButton} ${timeFilter === filter ? styles.filterButtonActive : ""}`}
-                  onClick={() => {
-                    setTimeFilter(filter); // Update button style
-                    fetchChartData(filter); // Fetch ONLY chart data
-                  }}
-                >
-                  {filterLabels[filter]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={styles.chartBars}>
-            {loadingChart ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-                <p>Cargando gráfica...</p>
-              </div>
-            ) : salesData.length === 0 ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-                <p>No hay datos para mostrar</p>
-              </div>
-            ) : (
-              salesData.map((item, index) => (
-                <div key={index} className={styles.chartBarWrapper}>
-                  <div
-                    className={styles.chartBar}
-                    style={{
-                      height: `${maxSales > 0 ? (item.value / maxSales) * 100 : 0}%`,
-                    }}
-                  >
-                    <div className={styles.chartBarTooltip}>
-                      ${item.value.toLocaleString()}
-                    </div>
-                  </div>
-                  <span className={styles.chartBarLabel}>{item.label}</span>
-                </div>
-              ))
-            )}
-          </div>
-          <div className={styles.chartSummary}>
-            <div className={styles.chartSummaryItem}>
-              <p className={styles.chartSummaryLabel}>Total</p>
-              <p className={styles.chartSummaryValue}>${totalSales.toLocaleString()}</p>
-            </div>
-            <div className={styles.chartSummaryItem}>
-              <p className={styles.chartSummaryLabel}>Promedio</p>
-              <p className={`${styles.chartSummaryValue} ${styles.chartSummaryValuePositive}`}>
-                ${averageSales.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
+        <SalesChart
+          salesData={salesData}
+          loadingChart={loadingChart}
+          timeFilter={timeFilter}
+          setTimeFilter={setTimeFilter}
+          fetchChartData={fetchChartData}
+          totalSales={totalSales}
+          averageSales={averageSales}
+          maxSales={maxSales}
+          filterLabels={filterLabels}
+        />
 
         {/* Recent Orders */}
         <div className={styles.recentOrders}>
