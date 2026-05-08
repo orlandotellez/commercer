@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/features/cart/context/CartContext';
 import { CreditCard, CheckCircle, Loader2 } from 'lucide-react';
 import styles from './page.module.css';
-import { listOrders } from '@/shared/lib/api';
 
 export default function CheckoutPage() {
   const { items, subtotal, tax, total, clearCart } = useCart();
@@ -24,17 +23,6 @@ export default function CheckoutPage() {
     postalCode: '',
   });
 
-  // Obtener user_id del localStorage o usar uno temporal
-  const getUserId = (): string => {
-    // Por ahora usamos un user_id hardcodeado o del localStorage
-    const stored = localStorage.getItem('user_id');
-    if (stored) return stored;
-    
-    // Si no hay usuario logueado, crear un ID temporal
-    const tempId = `temp-${Date.now()}`;
-    return tempId;
-  };
-
   useEffect(() => {
     if (items.length === 0 && step !== 'success') {
       router.push('/cart');
@@ -47,10 +35,10 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      // Obtener user_id - por ahora usamos un UUID hardcodeado para testing
-      // En producción vendría del contexto de auth
-      const userId = '00000000-0000-0000-0000-000000000001';
-      
+      // Obtener user_id del localStorage si existe, sino null (guest)
+      const stored = localStorage.getItem('user_id');
+      const userId = stored && !stored.startsWith('temp-') ? stored : null;
+
       // Preparar los items para la API
       const orderItems = items.map(({ product, quantity }) => ({
         product_id: product.id,
@@ -58,7 +46,11 @@ export default function CheckoutPage() {
         unit_price: product.price,
       }));
 
-      console.log('Enviando order:', { user_id: userId, items: orderItems });
+      // Construir customer data
+      const customerName = `${shippingData.name} ${shippingData.lastName}`.trim();
+      const shippingAddress = `${shippingData.address}, ${shippingData.city} ${shippingData.postalCode}`.trim();
+
+      console.log('Enviando order:', { user_id: userId, customer_name: customerName, items: orderItems });
 
       // Llamar a la API para crear el pedido
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}/orders`, {
@@ -69,6 +61,11 @@ export default function CheckoutPage() {
         credentials: 'include',
         body: JSON.stringify({
           user_id: userId,
+          customer_name: customerName,
+          customer_email: shippingData.email,
+          customer_phone: '', // Phone field can be added to the form if needed
+          shipping_address: shippingAddress,
+          payment_name: customerName, // Usa el nombre del cliente como nombre de pago
           items: orderItems,
         }),
       });
@@ -88,7 +85,7 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Error en checkout:', err);
       setError(err instanceof Error ? err.message : 'Error al procesar el pedido');
-      
+
       // Simular éxito como fallback para desarrollo
       setTimeout(() => {
         setOrderId(`SIM-${Date.now()}`);
@@ -149,16 +146,16 @@ export default function CheckoutPage() {
             <h3 className={styles.cardTitle}>Información de Envío</h3>
 
             <div className={styles.formGrid}>
-              <input 
-                required 
-                placeholder="Nombre" 
+              <input
+                required
+                placeholder="Nombre"
                 className={styles.input}
                 value={shippingData.name}
                 onChange={(e) => setShippingData({ ...shippingData, name: e.target.value })}
               />
-              <input 
-                required 
-                placeholder="Apellido" 
+              <input
+                required
+                placeholder="Apellido"
                 className={styles.input}
                 value={shippingData.lastName}
                 onChange={(e) => setShippingData({ ...shippingData, lastName: e.target.value })}
@@ -181,16 +178,16 @@ export default function CheckoutPage() {
                 onChange={(e) => setShippingData({ ...shippingData, address: e.target.value })}
               />
 
-              <input 
-                required 
-                placeholder="Ciudad" 
+              <input
+                required
+                placeholder="Ciudad"
                 className={styles.input}
                 value={shippingData.city}
                 onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
               />
-              <input 
-                required 
-                placeholder="Código Postal" 
+              <input
+                required
+                placeholder="Código Postal"
                 className={styles.input}
                 value={shippingData.postalCode}
                 onChange={(e) => setShippingData({ ...shippingData, postalCode: e.target.value })}

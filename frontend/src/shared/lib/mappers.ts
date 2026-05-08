@@ -35,8 +35,8 @@ export const categoryMap: Record<string, string> = {
 export function mapApiOrderToUi(apiOrder: OrderResponse): Order {
   return {
     id: apiOrder.id,
-    customer: apiOrder.user_id,
-    email: "", // El backend no devuelve email del usuario todavía
+    customer: apiOrder.customer_name || apiOrder.user_id || "Guest",
+    email: apiOrder.customer_email || "",
     total: apiOrder.total,
     status: apiOrder.status as OrderStatus,
     date: apiOrder.created_at?.split("T")[0] || "",
@@ -50,6 +50,15 @@ export function mapApiOrderToUi(apiOrder: OrderResponse): Order {
       subtotal: item.subtotal,
     })) || [],
     user_id: apiOrder.user_id,
+    customer_name: apiOrder.customer_name,
+    customer_email: apiOrder.customer_email,
+    customer_phone: apiOrder.customer_phone,
+    shipping_address: apiOrder.shipping_address,
+    payment_name: apiOrder.payment_name,
+    is_guest: apiOrder.is_guest,
+    subtotal: apiOrder.subtotal,
+    taxes: apiOrder.taxes,
+    created_at: apiOrder.created_at,
   };
 }
 

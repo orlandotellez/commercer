@@ -49,7 +49,13 @@ export interface Order {
   status: OrderStatus;
   date: string;
   items: number;
-  user_id: string;
+  user_id?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  shipping_address?: string;
+  payment_name?: string;
+  is_guest?: boolean;
   subtotal?: number;
   taxes?: number;
   created_at?: string;
@@ -95,12 +101,18 @@ export interface OrderItemResponse {
 
 export interface OrderResponse {
   id: string;
-  user_id: string;
+  user_id?: string;
   status: string;
   subtotal: number;
   taxes: number;
   total: number;
   created_at?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  shipping_address?: string;
+  payment_name?: string;
+  is_guest?: boolean;
   items: OrderItemResponse[];
 }
 
