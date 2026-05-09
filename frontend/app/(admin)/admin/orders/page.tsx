@@ -53,7 +53,7 @@ export default function OrdersPage() {
   return (
     <div className={styles.container}>
       {/* Page Header */}
-      <Header />
+      <Header orders={orders} statusLabels={statusLabels} />
 
       {/* Filters Section */}
       <Filters

@@ -17,6 +17,7 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Pro
 
   const res = await fetch(url, {
     credentials: 'include',
+    cache: 'no-store', // Evitar caché en cliente
   });
 
   if (!res.ok) {
