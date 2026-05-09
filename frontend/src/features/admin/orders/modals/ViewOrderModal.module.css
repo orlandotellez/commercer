@@ -37,6 +37,36 @@
   margin: 0;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pdfButton {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background-color: #007ACC;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.pdfButton:hover {
+  background-color: #005fa3;
+}
+
+.pdfIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
 .modalClose {
   background: none;
   border: none;

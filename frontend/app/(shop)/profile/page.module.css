@@ -255,3 +255,25 @@
   border-top: 1px solid #e5e7eb;
   margin-top: 0.5rem;
 }
+
+.pdfButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #007ACC;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.pdfButton:hover {
+  background-color: #005fa3;
+}

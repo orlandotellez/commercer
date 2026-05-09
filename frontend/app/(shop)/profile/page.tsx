@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getCurrentUser } from '@/shared/api/users';
 import { listOrders } from '@/shared/api/orders';
 import { UserProfile, OrderResponse } from '@/shared/types';
-import { LogOut, ChevronDown, ChevronUp, LayoutDashboard } from 'lucide-react';
+import { LogOut, ChevronDown, ChevronUp, LayoutDashboard, FileDown } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function ProfilePage() {
@@ -66,6 +66,12 @@ export default function ProfilePage() {
       return newSet;
     });
   };
+
+  // Generar PDF de forma dinámica (solo client-side)
+  const handleGeneratePDF = useCallback(async (order: OrderResponse) => {
+    const { generateInvoicePDF } = await import('@/shared/utils/invoice');
+    generateInvoicePDF(order);
+  }, []);
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -194,6 +200,13 @@ export default function ProfilePage() {
                       <span>${order.total?.toFixed(2)}</span>
                     </div>
                   </div>
+                  <button
+                    className={styles.pdfButton}
+                    onClick={() => handleGeneratePDF(order)}
+                  >
+                    <FileDown size={16} />
+                    Descargar Factura PDF
+                  </button>
                 </div>
               )}
             </div>

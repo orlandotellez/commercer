@@ -1,6 +1,6 @@
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, FileDown } from "lucide-react";
 import styles from "./ViewOrderModal.module.css"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { updateOrderStatus } from "@/shared/api/orders";
 
 // Tipos para la UI
@@ -53,6 +53,13 @@ export const ViewOrderModal = ({
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
+  // Generar PDF de forma dinámica (solo client-side)
+  const handleGeneratePDF = useCallback(async () => {
+    if (!order) return;
+    const { generateInvoicePDF } = await import("@/shared/utils/invoice");
+    generateInvoicePDF(order);
+  }, [order]);
+
   // Reset selected status when order changes (including status updates)
   useEffect(() => {
     if (order) {
@@ -90,9 +97,19 @@ export const ViewOrderModal = ({
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Detalle del Pedido</h2>
-          <button className={styles.modalClose} onClick={onClose}>
-            <X className={styles.modalCloseIcon} />
-          </button>
+          <div className={styles.headerActions}>
+            <button
+              className={styles.pdfButton}
+              onClick={handleGeneratePDF}
+              title="Descargar Factura PDF"
+            >
+              <FileDown className={styles.pdfIcon} />
+              <span>Factura PDF</span>
+            </button>
+            <button className={styles.modalClose} onClick={onClose}>
+              <X className={styles.modalCloseIcon} />
+            </button>
+          </div>
         </div>
         <div className={styles.modalBody}>
           <div className={styles.detailRow}>
