@@ -2,9 +2,30 @@ use axum::{
     extract::{Path, Query, State},
     response::Json,
 };
+use axum_extra::{
+    TypedHeader,
+    headers::{Authorization, authorization::Bearer},
+};
 
 use crate::features::users::service::{ListUsersParams, UsersService};
-use crate::shared::{errors::AppError, state::AppState};
+use crate::shared::{errors::AppError, helpers::jwt::decode_jwt, state::AppState};
+
+pub async fn get_current_user(
+    State(state): State<AppState>,
+    TypedHeader(authorization): TypedHeader<Authorization<Bearer>>,
+) -> Result<Json<super::response::UserResponse>, AppError> {
+    // Extract token from Authorization header
+    let token = authorization.token();
+
+    // Decode JWT to get user_id
+    let claims = decode_jwt(token)?;
+    let user_id = claims.sub;
+
+    // Fetch user from database
+    let user = UsersService::get_user_by_id(&state, user_id).await?;
+
+    Ok(Json(user))
+}
 
 pub async fn list_users(
     State(state): State<AppState>,
@@ -55,4 +76,3 @@ pub async fn change_password(
     UsersService::change_password(&state, id, payload).await?;
     Ok(Json(super::response::DeleteResponse { success: true }))
 }
-

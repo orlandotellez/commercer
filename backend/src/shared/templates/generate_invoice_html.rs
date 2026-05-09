@@ -1,6 +1,8 @@
-use crate::features::orders::response::OrderResponse;
+use crate::{
+    features::orders::response::OrderResponse,
+    shared::helpers::{date::format_date, email::get_status_text},
+};
 
-/// Generate invoice HTML template
 pub fn generate_invoice_html(order: &OrderResponse, customer_name: &str) -> String {
     let items_html: String = order.items.iter()
             .map(|item| format!(
@@ -20,6 +22,14 @@ pub fn generate_invoice_html(order: &OrderResponse, customer_name: &str) -> Stri
     let subtotal = order.subtotal;
     let taxes = order.taxes;
     let total = order.total;
+
+    // Format date and status
+    let formatted_date = order
+        .created_at
+        .as_ref()
+        .map(|d| format_date(d))
+        .unwrap_or_else(|| "N/A".to_string());
+    let status_text = get_status_text(&order.status);
 
     format!(
         r#"<!DOCTYPE html>
@@ -65,7 +75,7 @@ pub fn generate_invoice_html(order: &OrderResponse, customer_name: &str) -> Stri
                 <strong>Subtotal:</strong> ${:.2}
             </p>
             <p style="margin: 8px 0;">
-                <strong>IVA (21%):</strong> ${:.2}
+                <strong>IVA (15%):</strong> ${:.2}
             </p>
             <p style="margin: 8px 0; font-size: 20px; font-weight: bold;">
                 <strong>Total:</strong> ${:.2}
@@ -83,8 +93,8 @@ pub fn generate_invoice_html(order: &OrderResponse, customer_name: &str) -> Stri
         &order.id[..8].to_uppercase(),
         &order.id[..8].to_uppercase(),
         customer_name,
-        order.created_at.as_deref().unwrap_or("N/A"),
-        &order.status.to_uppercase(),
+        formatted_date,
+        status_text,
         items_html,
         subtotal,
         taxes,

@@ -105,6 +105,11 @@ impl UsersService {
         })
     }
 
+    pub async fn get_user_by_id(state: &AppState, id: Uuid) -> Result<UserResponse, AppError> {
+        // Reuse get_user logic
+        Self::get_user(state, id).await
+    }
+
     pub async fn create_user(
         state: &AppState,
         payload: CreateUserRequest,

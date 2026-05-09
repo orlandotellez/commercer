@@ -18,38 +18,70 @@ impl OrdersService {
         let limit = params.limit.unwrap_or(10);
         let offset = (page - 1) * limit;
 
-        // Get total count
-        let count_result: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM orders")
-            .fetch_one(&state.db)
-            .await?;
-        let total = count_result.0;
+        // Get total count - use simple query_as without branching
+        let total: i64 = match &params.user_id {
+            Some(uid) => {
+                let uuid = Uuid::parse_str(uid)
+                    .map_err(|_| AppError::BadRequest("Invalid user_id".into()))?;
+                let result: (i64,) =
+                    sqlx::query_as("SELECT COUNT(*) FROM orders WHERE user_id = $1")
+                        .bind(uuid)
+                        .fetch_one(&state.db)
+                        .await?;
+                result.0
+            }
+            None => {
+                let result: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM orders")
+                    .fetch_one(&state.db)
+                    .await?;
+                result.0
+            }
+        };
 
-        // Get orders with pagination
-        let orders = sqlx::query!(
-            r#"
-            SELECT 
-                id::text as "id",
-                status,
-                subtotal,
-                taxes,
-                total,
-                user_id::text as "user_id",
-                customer_name,
-                customer_email,
-                customer_phone,
-                shipping_address,
-                payment_name,
-                is_guest,
-                created_at::text as "created_at"
-            FROM orders
-            ORDER BY created_at DESC
-            LIMIT $1 OFFSET $2
-            "#,
-            limit as i64,
-            offset as i64
-        )
-        .fetch_all(&state.db)
-        .await?;
+        // Get orders with pagination - use execute then query_as to avoid type mismatch
+        let orders = match &params.user_id {
+            Some(uid) => {
+                let uuid = Uuid::parse_str(uid)
+                    .map_err(|_| AppError::BadRequest("Invalid user_id".into()))?;
+                let rows: Vec<OrderRow> = sqlx::query_as(
+                    "SELECT id::text as id, status, subtotal, taxes, total, user_id::text as user_id, customer_name, customer_email, customer_phone, shipping_address, payment_name, is_guest, created_at::text as created_at FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3"
+                )
+                .bind(uuid)
+                .bind(limit as i64)
+                .bind(offset as i64)
+                .fetch_all(&state.db)
+                .await?;
+                rows
+            }
+            None => {
+                let rows: Vec<OrderRow> = sqlx::query_as(
+                    "SELECT id::text as id, status, subtotal, taxes, total, user_id::text as user_id, customer_name, customer_email, customer_phone, shipping_address, payment_name, is_guest, created_at::text as created_at FROM orders ORDER BY created_at DESC LIMIT $1 OFFSET $2"
+                )
+                .bind(limit as i64)
+                .bind(offset as i64)
+                .fetch_all(&state.db)
+                .await?;
+                rows
+            }
+        };
+
+        // Helper struct for mapping query results
+        #[derive(sqlx::FromRow)]
+        struct OrderRow {
+            id: Option<String>,
+            status: String,
+            subtotal: BigDecimal,
+            taxes: BigDecimal,
+            total: BigDecimal,
+            user_id: Option<String>,
+            customer_name: Option<String>,
+            customer_email: Option<String>,
+            customer_phone: Option<String>,
+            shipping_address: Option<String>,
+            payment_name: Option<String>,
+            is_guest: Option<bool>,
+            created_at: Option<String>,
+        }
 
         // Get items for each order
         let mut order_responses = Vec::new();
@@ -83,9 +115,13 @@ impl OrdersService {
     }
 
     /// Get order items by order_id
-    async fn get_order_items(db: &sqlx::PgPool, order_id: &str) -> Result<Vec<OrderItemResponse>, AppError> {
-        let order_uuid = Uuid::parse_str(order_id).map_err(|_| AppError::BadRequest("Invalid order ID".into()))?;
-        
+    async fn get_order_items(
+        db: &sqlx::PgPool,
+        order_id: &str,
+    ) -> Result<Vec<OrderItemResponse>, AppError> {
+        let order_uuid = Uuid::parse_str(order_id)
+            .map_err(|_| AppError::BadRequest("Invalid order ID".into()))?;
+
         let items = sqlx::query!(
             r#"
             SELECT 
@@ -171,16 +207,20 @@ impl OrdersService {
         payload: CreateOrderRequest,
     ) -> Result<OrderResponse, AppError> {
         let order_id = Uuid::new_v4();
-        
+
         // Calculate totals
-        let subtotal: f64 = payload.items.iter().map(|i| i.unit_price * i.quantity as f64).sum();
-        let taxes = subtotal * 0.21; // 21% IVA
+        let subtotal: f64 = payload
+            .items
+            .iter()
+            .map(|i| i.unit_price * i.quantity as f64)
+            .sum();
+        let taxes = (subtotal * 0.15 * 100.0).round() / 100.0; // 15% IVA rounded
         let total = subtotal + taxes;
 
-        // Convert to DECIMAL for database
-        let subtotal_bd = BigDecimal::from((subtotal * 100.0) as i64) / BigDecimal::from(100);
-        let taxes_bd = BigDecimal::from((taxes * 100.0) as i64) / BigDecimal::from(100);
-        let total_bd = BigDecimal::from((total * 100.0) as i64) / BigDecimal::from(100);
+        // Convert to DECIMAL for database (already rounded)
+        let subtotal_bd = BigDecimal::from((subtotal * 100.0).round() as i64) / BigDecimal::from(100);
+        let taxes_bd = BigDecimal::from((taxes * 100.0).round() as i64) / BigDecimal::from(100);
+        let total_bd = BigDecimal::from((total * 100.0).round() as i64) / BigDecimal::from(100);
 
         // Parse user_id and determine if guest
         let (parsed_user_id, is_guest) = match &payload.user_id {
@@ -235,8 +275,10 @@ impl OrdersService {
             let product_id = Uuid::parse_str(&item.product_id)
                 .map_err(|_| AppError::BadRequest("Invalid product_id".into()))?;
             let item_subtotal = item.unit_price * item.quantity as f64;
-            let item_subtotal_bd = BigDecimal::from((item_subtotal * 100.0) as i64) / BigDecimal::from(100);
-            let unit_price_bd = BigDecimal::from((item.unit_price * 100.0) as i64) / BigDecimal::from(100);
+            let item_subtotal_bd =
+                BigDecimal::from((item_subtotal * 100.0) as i64) / BigDecimal::from(100);
+            let unit_price_bd =
+                BigDecimal::from((item.unit_price * 100.0) as i64) / BigDecimal::from(100);
 
             let order_item = sqlx::query!(
                 r#"
@@ -256,12 +298,9 @@ impl OrdersService {
             .await?;
 
             // Get product name
-            let product = sqlx::query!(
-                "SELECT name FROM product WHERE id = $1",
-                product_id
-            )
-            .fetch_optional(&state.db)
-            .await?;
+            let product = sqlx::query!("SELECT name FROM product WHERE id = $1", product_id)
+                .fetch_optional(&state.db)
+                .await?;
 
             items.push(OrderItemResponse {
                 id: order_item.id.unwrap_or_default(),
@@ -297,10 +336,25 @@ impl OrdersService {
         id: Uuid,
         payload: UpdateOrderStatusRequest,
     ) -> Result<OrderResponse, AppError> {
-        let valid_statuses = vec!["pending", "paid", "processing", "shipped", "completed", "cancelled"];
+        let valid_statuses = vec![
+            "pending",
+            "paid",
+            "processing",
+            "shipped",
+            "completed",
+            "cancelled",
+        ];
         if !valid_statuses.contains(&payload.status.as_str()) {
             return Err(AppError::BadRequest("Invalid status".into()));
         }
+
+        // First get the current status (old status)
+        let old_order: Option<(String,)> = sqlx::query_as("SELECT status FROM orders WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&state.db)
+            .await?;
+        
+        let old_status = old_order.map(|(s,)| s).unwrap_or_else(|| "pending".to_string());
 
         let order = sqlx::query!(
             r#"
@@ -331,22 +385,39 @@ impl OrdersService {
         let order_id = order.id.clone().unwrap_or_default();
         let items = Self::get_order_items(&state.db, &order_id).await?;
 
-        Ok(OrderResponse {
-            id: order_id,
-            status: order.status,
+        let order_response = OrderResponse {
+            id: order_id.clone(),
+            status: order.status.clone(),
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
             taxes: order.taxes.to_f64().unwrap_or(0.0),
             total: order.total.to_f64().unwrap_or(0.0),
-            user_id: order.user_id,
-            customer_name: order.customer_name,
-            customer_email: order.customer_email,
-            customer_phone: order.customer_phone,
-            shipping_address: order.shipping_address,
-            payment_name: order.payment_name,
+            user_id: order.user_id.clone(),
+            customer_name: order.customer_name.clone(),
+            customer_email: order.customer_email.clone(),
+            customer_phone: order.customer_phone.clone(),
+            shipping_address: order.shipping_address.clone(),
+            payment_name: order.payment_name.clone(),
             is_guest: order.is_guest,
             created_at: order.created_at.clone(),
             items,
-        })
+        };
+
+        // Send status update email asynchronously (fire and forget)
+        let order_for_email = order_response.clone();
+        let old_status_clone = old_status.clone();
+        let new_status = order.status.clone();
+        
+        tokio::spawn(async move {
+            use crate::features::email::service::EmailService;
+            
+            let _ = EmailService::send_status_update(
+                &order_for_email,
+                &old_status_clone,
+                &new_status,
+            ).await;
+        });
+
+        Ok(order_response)
     }
 
     /// Delete an order
