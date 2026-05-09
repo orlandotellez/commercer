@@ -178,6 +178,11 @@
   margin-bottom: 20px;
 }
 
+.buttons {
+  display: flex;
+  gap: 20px;
+}
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .container {
@@ -252,6 +257,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

@@ -54,6 +54,21 @@
   font-size: 0.875rem;
 }
 
+.goToShop {
+  display: flex;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px 0;
+}
+
+.goToShop a {
+  border: 1px solid transparent;
+}
+
+.goToShop a:hover {
+  border-bottom: 1px solid black;
+}
+
 /* Form */
 .form {
   display: flex;
@@ -126,6 +141,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

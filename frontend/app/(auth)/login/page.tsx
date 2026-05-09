@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Cpu, Loader2 } from 'lucide-react';
+import { ArrowBigLeft, ChevronLeft, Cpu, Loader2 } from 'lucide-react';
 import styles from './page.module.css';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -78,6 +79,10 @@ export default function LoginPage() {
 
   return (
     <div className={styles.container}>
+      <div className={styles.goToShop}>
+        <ChevronLeft />
+        <Link href="/">Ir a la tienda</Link>
+      </div>
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.logo}>

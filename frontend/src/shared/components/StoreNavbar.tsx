@@ -3,14 +3,16 @@
 import Link from 'next/link';
 import { ShoppingCart, Search, Menu, X, User } from 'lucide-react';
 import { useCart } from '@/features/cart/context/CartContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { categories } from '@/features/product/data/categories';
+import { useAuth } from '@/shared/hooks/useAuth';
 import styles from './StoreNavbar.module.css';
 
 export const StoreNavbar = () => {
   const { itemCount } = useCart();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <header className={styles.header}>
@@ -66,7 +68,7 @@ export const StoreNavbar = () => {
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
 
-            <Link href="/login" className={styles.profile}>
+            <Link href={isAuthenticated ? "/profile" : "/login"} className={styles.profile}>
               <User size={22} />
             </Link>
           </div>

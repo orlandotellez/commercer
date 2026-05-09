@@ -36,8 +36,17 @@ export default function CheckoutPage() {
 
     try {
       // Obtener user_id del localStorage si existe, sino null (guest)
-      const stored = localStorage.getItem('user_id');
-      const userId = stored && !stored.startsWith('temp-') ? stored : null;
+      // Si hay un user en localStorage, usarlo directamente
+      const storedUser = localStorage.getItem('user');
+      let userId = null;
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          userId = userData.id || null;
+        } catch (e) {
+          console.error('Error parsing user from localStorage:', e);
+        }
+      }
 
       // Preparar los items para la API
       const orderItems = items.map(({ product, quantity }) => ({
@@ -117,12 +126,21 @@ export default function CheckoutPage() {
           Podés seguir tu pedido en el panel de administración.
         </p>
 
-        <button
-          onClick={() => router.push('/')}
-          className={styles.primaryButton}
-        >
-          Volver a la Tienda
-        </button>
+        <div className={styles.buttons}>
+          <button
+            onClick={() => router.push('/')}
+            className={styles.primaryButton}
+          >
+            Volver a la Tienda
+          </button>
+
+          <button
+            onClick={() => router.push('/profile')}
+            className={styles.primaryButton}
+          >
+            Ver el pedido
+          </button>
+        </div>
       </div>
     );
   }
@@ -255,7 +273,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className={styles.row}>
-                <span>IVA (16%)</span>
+                <span>IVA (15%)</span>
                 <span>${tax.toFixed(2)}</span>
               </div>
 
