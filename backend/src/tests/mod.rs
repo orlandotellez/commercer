@@ -1,9 +1,6 @@
+pub mod helpers;
 mod users;
-
-#[cfg(test)]
-mod integration_tests {
-    #[tokio::test]
-    async fn test_placeholder() {
-        assert!(true);
-    }
-}
+mod auth;
+mod products;
+mod categories;
+mod orders;
