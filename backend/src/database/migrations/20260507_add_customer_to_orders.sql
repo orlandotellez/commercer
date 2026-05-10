@@ -1,8 +1,0 @@
--- Add customer fields to orders table
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS user_id UUID;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_name TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_guest BOOLEAN DEFAULT true;
