@@ -12,7 +12,10 @@ pub struct RefreshResult {
 pub struct RefreshService;
 
 impl RefreshService {
-    pub async fn refresh(state: &AppState, refresh_token: String) -> Result<RefreshResult, AppError> {
+    pub async fn refresh(
+        state: &AppState,
+        refresh_token: String,
+    ) -> Result<RefreshResult, AppError> {
         // Buscar sesión
         let session = sqlx::query!(
             r#"
@@ -75,10 +78,12 @@ impl RefreshService {
         .execute(&state.db)
         .await?;
 
-        Ok(RefreshResult {
+        let result: RefreshResult = RefreshResult {
             access_token: new_access_token,
             refresh_token: new_refresh_token,
             user_id: session.user_id,
-        })
+        };
+
+        Ok(result)
     }
 }

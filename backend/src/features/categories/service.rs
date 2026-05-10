@@ -24,7 +24,7 @@ impl CategoriesService {
         .fetch_all(&state.db)
         .await?;
 
-        Ok(categories
+        let response: Vec<CategoryResponse> = categories
             .into_iter()
             .map(|c| CategoryResponse {
                 id: c.id.unwrap_or_default(),
@@ -32,7 +32,9 @@ impl CategoriesService {
                 slug: c.slug.unwrap_or_default(),
                 description: c.description,
             })
-            .collect())
+            .collect();
+
+        Ok(response)
     }
 
     /// Get a single category by ID
@@ -53,12 +55,14 @@ impl CategoriesService {
         .await?
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
-        Ok(CategoryResponse {
+        let response: CategoryResponse = CategoryResponse {
             id: category.id.unwrap_or_default(),
             name: category.name,
             slug: category.slug.unwrap_or_default(),
             description: category.description,
-        })
+        };
+
+        Ok(response)
     }
 
     /// Create a new category
@@ -86,12 +90,14 @@ impl CategoriesService {
         .fetch_one(&state.db)
         .await?;
 
-        Ok(CategoryResponse {
+        let response: CategoryResponse = CategoryResponse {
             id: result.id.unwrap_or_default(),
             name: result.name,
             slug: result.slug.unwrap_or_default(),
             description: result.description,
-        })
+        };
+
+        Ok(response)
     }
 
     /// Update an existing category
@@ -122,12 +128,14 @@ impl CategoriesService {
         .await?
         .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
 
-        Ok(CategoryResponse {
+        let response: CategoryResponse = CategoryResponse {
             id: result.id.unwrap_or_default(),
             name: result.name,
             slug: result.slug.unwrap_or_default(),
             description: result.description,
-        })
+        };
+
+        Ok(response)
     }
 
     /// Delete a category

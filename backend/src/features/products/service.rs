@@ -95,23 +95,24 @@ impl ProductsService {
         let product = sqlx::query!(
             r#"
             SELECT 
-                id::text as "id", 
-                name, 
-                slug, 
-                description, 
-                price as "price", 
-                original_price, 
-                image_url as "image", 
-                category_id::text as "category_id", 
-                name as "category_name?",
-                brand, 
-                stock as "stock", 
-                specs, 
-                COALESCE(active, false) as "active", 
-                COALESCE(featured, false) as "featured", 
-                created_at::text as "created_at"
-            FROM product
-            WHERE id = $1
+                p.id::text as "id", 
+                p.name, 
+                p.slug, 
+                p.description, 
+                p.price as "price", 
+                p.original_price, 
+                p.image_url as "image", 
+                p.category_id::text as "category_id", 
+                c.name as "category_name?",
+                p.brand, 
+                p.stock as "stock", 
+                p.specs, 
+                COALESCE(p.active, false) as "active", 
+                COALESCE(p.featured, false) as "featured", 
+                p.created_at::text as "created_at"
+            FROM product p
+            LEFT JOIN category c ON p.category_id = c.id
+            WHERE p.id = $1
             "#,
             id
         )

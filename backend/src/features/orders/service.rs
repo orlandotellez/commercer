@@ -106,12 +106,14 @@ impl OrdersService {
             });
         }
 
-        Ok(OrdersListResponse {
+        let response: OrdersListResponse = OrdersListResponse {
             orders: order_responses,
             total,
             page,
             limit,
-        })
+        };
+
+        Ok(response)
     }
 
     /// Get order items by order_id
@@ -140,7 +142,7 @@ impl OrdersService {
         .fetch_all(db)
         .await?;
 
-        Ok(items
+        let response: Vec<OrderItemResponse> = items
             .into_iter()
             .map(|i| OrderItemResponse {
                 id: i.id.unwrap_or_default(),
@@ -150,7 +152,9 @@ impl OrdersService {
                 unit_price: i.unit_price.to_f64().unwrap_or(0.0),
                 subtotal: i.subtotal.to_f64().unwrap_or(0.0),
             })
-            .collect())
+            .collect();
+
+        Ok(response)
     }
 
     /// Get a single order by ID
@@ -183,7 +187,7 @@ impl OrdersService {
         let order_id = order.id.clone().unwrap_or_default();
         let items = Self::get_order_items(&state.db, &order_id).await?;
 
-        Ok(OrderResponse {
+        let response: OrderResponse = OrderResponse {
             id: order_id,
             status: order.status,
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
@@ -198,7 +202,9 @@ impl OrdersService {
             is_guest: order.is_guest,
             created_at: order.created_at.clone(),
             items,
-        })
+        };
+
+        Ok(response)
     }
 
     /// Create a new order with items
@@ -218,7 +224,8 @@ impl OrdersService {
         let total = subtotal + taxes;
 
         // Convert to DECIMAL for database (already rounded)
-        let subtotal_bd = BigDecimal::from((subtotal * 100.0).round() as i64) / BigDecimal::from(100);
+        let subtotal_bd =
+            BigDecimal::from((subtotal * 100.0).round() as i64) / BigDecimal::from(100);
         let taxes_bd = BigDecimal::from((taxes * 100.0).round() as i64) / BigDecimal::from(100);
         let total_bd = BigDecimal::from((total * 100.0).round() as i64) / BigDecimal::from(100);
 
@@ -269,6 +276,38 @@ impl OrdersService {
         .fetch_one(&state.db)
         .await?;
 
+        // Validar stock disponible antes de procesar
+        for item in &payload.items {
+            let product_id = Uuid::parse_str(&item.product_id)
+                .map_err(|_| AppError::BadRequest("Invalid product_id".into()))?;
+
+            let inventory = sqlx::query!(
+                r#"
+                SELECT i.stock_current, p.name 
+                FROM inventory i 
+                JOIN product p ON p.id = i.product_id 
+                WHERE i.product_id = $1
+                "#,
+                product_id
+            )
+            .fetch_optional(&state.db)
+            .await?;
+
+            if let Some(inv) = inventory {
+                if inv.stock_current < item.quantity as i32 {
+                    return Err(AppError::BadRequest(format!(
+                        "Stock insuficiente para '{}'. Disponible: {}, solicitado: {}",
+                        inv.name, inv.stock_current, item.quantity
+                    )));
+                }
+            } else {
+                return Err(AppError::BadRequest(format!(
+                    "Producto {} no encontrado en inventario",
+                    item.product_id
+                )));
+            }
+        }
+
         // Insert order items
         let mut items = Vec::new();
         for item in payload.items {
@@ -297,6 +336,36 @@ impl OrdersService {
             .fetch_one(&state.db)
             .await?;
 
+            // Decrementar stock del producto
+            println!(
+                ">>> decrementando stock para producto {} cantidad {}",
+                product_id, item.quantity
+            );
+            let result = sqlx::query!(
+                r#"
+                UPDATE product 
+                SET stock = stock - $1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $2
+                "#,
+                item.quantity,
+                product_id
+            )
+            .execute(&state.db)
+            .await;
+
+            if let Err(e) = result {
+                eprintln!(
+                    "Error decrementando stock para producto {}: {}",
+                    product_id, e
+                );
+            } else {
+                println!(
+                    ">>> stock decrementado exitosamente para producto {}",
+                    product_id
+                );
+            }
+
             // Get product name
             let product = sqlx::query!("SELECT name FROM product WHERE id = $1", product_id)
                 .fetch_optional(&state.db)
@@ -312,7 +381,7 @@ impl OrdersService {
             });
         }
 
-        Ok(OrderResponse {
+        let response: OrderResponse = OrderResponse {
             id: order.id.unwrap_or_default(),
             status: order.status,
             subtotal: order.subtotal.to_f64().unwrap_or(0.0),
@@ -327,7 +396,9 @@ impl OrdersService {
             is_guest: order.is_guest,
             created_at: order.created_at.clone(),
             items,
-        })
+        };
+
+        Ok(response)
     }
 
     /// Update order status
@@ -349,12 +420,15 @@ impl OrdersService {
         }
 
         // First get the current status (old status)
-        let old_order: Option<(String,)> = sqlx::query_as("SELECT status FROM orders WHERE id = $1")
-            .bind(id)
-            .fetch_optional(&state.db)
-            .await?;
-        
-        let old_status = old_order.map(|(s,)| s).unwrap_or_else(|| "pending".to_string());
+        let old_order: Option<(String,)> =
+            sqlx::query_as("SELECT status FROM orders WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&state.db)
+                .await?;
+
+        let old_status = old_order
+            .map(|(s,)| s)
+            .unwrap_or_else(|| "pending".to_string());
 
         let order = sqlx::query!(
             r#"
@@ -406,15 +480,13 @@ impl OrdersService {
         let order_for_email = order_response.clone();
         let old_status_clone = old_status.clone();
         let new_status = order.status.clone();
-        
+
         tokio::spawn(async move {
             use crate::features::email::service::EmailService;
-            
-            let _ = EmailService::send_status_update(
-                &order_for_email,
-                &old_status_clone,
-                &new_status,
-            ).await;
+
+            let _ =
+                EmailService::send_status_update(&order_for_email, &old_status_clone, &new_status)
+                    .await;
         });
 
         Ok(order_response)
