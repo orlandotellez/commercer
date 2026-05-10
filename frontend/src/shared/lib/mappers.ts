@@ -20,15 +20,15 @@ export function mapToAdminProduct(p: any): AdminProduct {
 }
 
 export const categoryMap: Record<string, string> = {
-  "Procesadores": "cpu",
-  "Tarjetas Gráficas": "gpu",
-  "Memoria": "ram",
-  "Almacenamiento": "storage",
-  "Placas Madre": "motherboard",
-  "Fuentes de Poder": "psu",
-  "Monitores": "monitor",
-  "Periféricos": "peripherals",
-  "Accesorios PC": "accessories",
+  "cpu": "procesadores",
+  "gpu": "tarjetas-graficas",
+  "ram": "memoria",
+  "storage": "almacenamiento",
+  "motherboard": "placas-madre",
+  "psu": "fuentes-de-poder",
+  "monitor": "monitores",
+  "peripherals": "perifericos",
+  "accessories": "accesorios",
 };
 
 // Mapear respuesta de API a formato de UI

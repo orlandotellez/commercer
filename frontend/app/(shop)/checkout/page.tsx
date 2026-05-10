@@ -94,13 +94,8 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Error en checkout:', err);
       setError(err instanceof Error ? err.message : 'Error al procesar el pedido');
-
-      // Simular éxito como fallback para desarrollo
-      setTimeout(() => {
-        setOrderId(`SIM-${Date.now()}`);
-        setStep('success');
-        clearCart();
-      }, 500);
+    } finally {
+      setProcessing(false);
     }
   };
 

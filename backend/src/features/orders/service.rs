@@ -281,11 +281,26 @@ impl OrdersService {
             let product_id = Uuid::parse_str(&item.product_id)
                 .map_err(|_| AppError::BadRequest("Invalid product_id".into()))?;
 
+            // First check if product exists
+            let product = sqlx::query!("SELECT name FROM product WHERE id = $1", product_id)
+                .fetch_optional(&state.db)
+                .await?;
+
+            let product_name = match product {
+                Some(p) => p.name,
+                None => {
+                    return Err(AppError::BadRequest(format!(
+                        "Producto {} no encontrado",
+                        item.product_id
+                    )));
+                }
+            };
+
+            // Check inventory for stock
             let inventory = sqlx::query!(
                 r#"
-                SELECT i.stock_current, p.name 
+                SELECT i.stock_current 
                 FROM inventory i 
-                JOIN product p ON p.id = i.product_id 
                 WHERE i.product_id = $1
                 "#,
                 product_id
@@ -297,15 +312,11 @@ impl OrdersService {
                 if inv.stock_current < item.quantity as i32 {
                     return Err(AppError::BadRequest(format!(
                         "Stock insuficiente para '{}'. Disponible: {}, solicitado: {}",
-                        inv.name, inv.stock_current, item.quantity
+                        product_name, inv.stock_current, item.quantity
                     )));
                 }
-            } else {
-                return Err(AppError::BadRequest(format!(
-                    "Producto {} no encontrado en inventario",
-                    item.product_id
-                )));
             }
+            // Si no hay inventario, asumimos stock suficiente (producto sin control de inventario)
         }
 
         // Insert order items
