@@ -1,14 +1,20 @@
+use crate::routes::create_routes;
 use crate::shared::helpers::password::hash_password;
 use crate::shared::state::AppState;
-use crate::routes::create_routes;
-use crate::tests::helpers::{create_test_pool, cleanup_test_data, create_test_user};
+use crate::tests::helpers::{cleanup_test_data, create_test_pool, create_test_user};
 
 fn generate_unique_email(prefix: &str) -> String {
     format!("{}_{}@example.com", prefix, uuid::Uuid::new_v4())
 }
 
 /// Test helper to spawn the test server
-async fn spawn_test_server(db: sqlx::PgPool) -> (tokio::task::JoinHandle<()>, reqwest::Client, std::net::SocketAddr) {
+async fn spawn_test_server(
+    db: sqlx::PgPool,
+) -> (
+    tokio::task::JoinHandle<()>,
+    reqwest::Client,
+    std::net::SocketAddr,
+) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
 
@@ -140,8 +146,24 @@ async fn test_list_users_with_data() {
     let pool = create_test_pool().await.unwrap();
 
     let password_hash = hash_password("password123").unwrap();
-    let _ = create_test_user(&pool, "User One", &generate_unique_email("user1"), "customer", &password_hash).await.unwrap();
-    let _ = create_test_user(&pool, "User Two", &generate_unique_email("user2"), "admin", &password_hash).await.unwrap();
+    let _ = create_test_user(
+        &pool,
+        "User One",
+        &generate_unique_email("user1"),
+        "customer",
+        &password_hash,
+    )
+    .await
+    .unwrap();
+    let _ = create_test_user(
+        &pool,
+        "User Two",
+        &generate_unique_email("user2"),
+        "admin",
+        &password_hash,
+    )
+    .await
+    .unwrap();
 
     let (handle, client, addr) = spawn_test_server(pool.clone()).await;
 
@@ -186,7 +208,9 @@ async fn test_get_user_by_id_success() {
 
     let email = generate_unique_email("getuser");
     let password_hash = hash_password("password123").unwrap();
-    let user_id = create_test_user(&pool, "Test User", &email, "admin", &password_hash).await.unwrap();
+    let user_id = create_test_user(&pool, "Test User", &email, "admin", &password_hash)
+        .await
+        .unwrap();
 
     let (handle, client, addr) = spawn_test_server(pool.clone()).await;
 
@@ -211,7 +235,9 @@ async fn test_update_user_success() {
 
     let email = generate_unique_email("update");
     let password_hash = hash_password("password123").unwrap();
-    let user_id = create_test_user(&pool, "Old Name", &email, "customer", &password_hash).await.unwrap();
+    let user_id = create_test_user(&pool, "Old Name", &email, "customer", &password_hash)
+        .await
+        .unwrap();
 
     let (handle, client, addr) = spawn_test_server(pool.clone()).await;
 
@@ -242,7 +268,9 @@ async fn test_delete_user_success() {
 
     let email = generate_unique_email("delete");
     let password_hash = hash_password("password123").unwrap();
-    let user_id = create_test_user(&pool, "To Delete", &email, "customer", &password_hash).await.unwrap();
+    let user_id = create_test_user(&pool, "To Delete", &email, "customer", &password_hash)
+        .await
+        .unwrap();
 
     let (handle, client, addr) = spawn_test_server(pool.clone()).await;
 
