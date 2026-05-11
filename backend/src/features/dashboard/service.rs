@@ -216,18 +216,19 @@ impl DashboardService {
             .collect())
     }
 
-    /// Get inventory alerts where stock_current < stock_minimum
+    /// Get inventory alerts - only products with stock <= 10
     pub async fn get_inventory_alerts(state: &AppState) -> Result<Vec<InventoryAlert>, AppError> {
         let alerts = sqlx::query!(
             r#"
             SELECT 
                 p.name as product,
-                i.stock_current as "stock!",
-                i.stock_minimum as "threshold!"
-            FROM inventory i
-            JOIN product p ON p.id = i.product_id
-            WHERE i.stock_current < i.stock_minimum
-            ORDER BY (i.stock_minimum - i.stock_current) DESC
+                COALESCE(i.stock_current, p.stock, 10) as "stock!",
+                COALESCE(i.stock_minimum, 5) as "threshold!"
+            FROM product p
+            LEFT JOIN inventory i ON p.id = i.product_id
+            WHERE COALESCE(i.stock_current, p.stock, 10) <= 10
+            ORDER BY COALESCE(i.stock_current, p.stock, 10) ASC
+            LIMIT 10
             "#
         )
         .fetch_all(&state.db)
@@ -236,11 +237,13 @@ impl DashboardService {
         Ok(alerts
             .into_iter()
             .map(|a| {
-                let urgent = a.stock < (a.threshold / 2);
+                let threshold = a.threshold;
+                let stock = a.stock;
+                let urgent = stock <= 3; // Urgent if stock is 3 or less
                 InventoryAlert {
                     product: a.product,
-                    stock: a.stock,
-                    threshold: a.threshold,
+                    stock,
+                    threshold,
                     urgent,
                 }
             })
